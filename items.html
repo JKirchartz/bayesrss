@@ -1,0 +1,27 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<body>
+Count: {{ count }}
+{% for key, item in itemDict.items %}
+    <p>
+        <b>Title:</b> {{ item.0.title }}<br/>
+        <b>Description:</b> {{ item.0.description }}<br/>
+        <b>Prob:</b> {{ item.1 }}<br/>
+        <div>
+        <form action="/feed/classify" method="post">
+            <input type="hidden" name="id" value="{{ key }}">
+            <input type="hidden" name="feed" value="{{ feed }}">
+            <input type="hidden" name="action" value="good">
+            <input type="submit" value="Good">
+        </form>
+        <form action="/feed/classify" method="post">
+            <input type="hidden" name="id" value="{{ key }}">
+            <input type="hidden" name="feed" value="{{ feed }}">
+            <input type="hidden" name="action" value="bad">
+            <input type="submit" value="Bad">
+        </form>
+        </div>
+    </p>
+{% endfor %}
+</body>
+</html>

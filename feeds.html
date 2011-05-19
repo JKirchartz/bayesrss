@@ -1,0 +1,20 @@
+<html>
+<body>
+<form action="/feeds" method="post">
+    <div>
+        <input type="text" name="link" size="60">
+        <input type="submit" value="Add Feed">
+    </div>
+</form>
+{% for feed in feeds %}
+    <p>
+        <b>Title:</b> {{ feed.title }}<br/>
+        <b>Description:</b> {{ feed.description }}<br/>
+        <b>Link:</b> <a href="{{ feed.link }}">{{ feed.link }}</a><br/>
+        <a href="/feed/items?key={{ feed.key }}">View</a>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <a href="/feed/delete?key={{ feed.key }}">Delete</a><br/>
+    </p>
+{% endfor %}
+</body>
+</html>

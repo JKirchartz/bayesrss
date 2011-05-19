@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+        <title>{{feed.title}}</title>
+        <description>{{feed.description}}</description>
+        <link>{{feed.link}}</link>
+        <lastBuildDate>Mon, 06 Sep 2010 00:01:00 +0000 </lastBuildDate>
+        <pubDate>Mon, 06 Sep 2009 16:45:00 +0000 </pubDate>
+
+        {% for item in items %}
+        <item>
+                <title>{{item.title}}</title>
+                <description>{{item.description}}</description>
+                <link>{{item.link}}</link>
+                {% if item.guid %}<guid>{{item.guid}}</guid>{% endif %}
+                <pubDate>{{item.pubdate}}</pubDate>
+        </item>
+        {% endfor %}
+</channel>
+</rss>
