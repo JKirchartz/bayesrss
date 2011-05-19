@@ -15,6 +15,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app
 
+SPAM_THRESHOLD = 0.95
 HIT_COUNTER_KEY = "key"
 SPAM_COUNT_KEY = "singleton"
 FEED_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'feed.xml')
@@ -27,27 +28,42 @@ start_time = datetime.now()
 fetchTime = None
 classifier = Classifier()
 
+class ViewFeedXmlFiltered(webapp.RequestHandler):
+    def get(self):
+        hitCounter.countXmlServiceHit(self.request.headers)
+        key = self.request.get('key')
+        feed = Feed.get(key)
+        items, fresh = get_cached_items(key)
+        
+        filtered = []
+        for i in items:
+            if classifier.spamprob(i.getTokens()) < SPAM_THRESHOLD:
+                filtered.append(i)
+                
+        self.response.headers['Content-Type'] = 'text/xml'
+        self.response.out.write(
+            template.render(FEED_TEMPLATE_PATH, {"items":filtered, "feed":feed}))
+
 class ViewFeedXml(webapp.RequestHandler):
     def get(self):
         hitCounter.countXmlServiceHit(self.request.headers)
         key = self.request.get('key')
         feed = Feed.get(key)
-        items = get_cached_items(key)
+        items, fresh = get_cached_items(key)
 
         self.response.headers['Content-Type'] = 'text/xml'
         self.response.out.write(
-            template.render(FEED_TEMPLATE_PATH, {"items" : items, "feed" : feed}))
+            template.render(FEED_TEMPLATE_PATH, {"items":items, "feed":feed}))
 
 class ViewFeedHtml(webapp.RequestHandler):
     def get(self):
         key = self.request.get('key')
-        items = get_cached_items(key)
+        items, fresh = get_cached_items(key)
         
         global itemDict
-        itemDict = {}
         for it in items:
             itemDict[str(hash(it))] = [it, classifier.spamprob(it.getTokens())]
-            
+                
         self.response.headers['Content-Type'] = 'text/html'
         self.response.out.write(
             template.render(HTML_TEMPLATE_PATH, {"itemDict":itemDict, "count":len(items), "feed":key}))
@@ -63,7 +79,6 @@ class EditFeeds(webapp.RequestHandler):
 
 class ViewTest(webapp.RequestHandler):
     def get(self):
-        import django
         self.response.headers['Content-Type'] = 'text/plain'
         self.response.out.write(str(classifier.nspam) + "\n")
         self.response.out.write(str(classifier.nham))
@@ -75,7 +90,8 @@ class ViewHits(webapp.RequestHandler):
     def get(self):
         self.response.headers['Content-Type'] = 'text/plain'
         if hitCounter:
-            self.response.out.write("Count=" + str(hitCounter.count) + "\n")
+            self.response.out.write("XmlCount=" + str(hitCounter.xmlServiceHitCount) + "\n")
+            self.response.out.write("FetchCount=" + str(hitCounter.fetchFeedCount) + "\n")
             self.response.out.write("Uptime=" + str(datetime.now() - start_time) + "\n\n")
             if hitCounter.headers:
                 self.response.out.write("Headers=" + hitCounter.headers)
@@ -124,6 +140,7 @@ application = webapp.WSGIApplication(
          ('/feed/delete', EditFeeds),
          ('/feed/items', ViewFeedHtml),
          ('/feed/xml', ViewFeedXml),
+         ('/feed/xml/filtered', ViewFeedXmlFiltered),
          ('/feed/classify', ClassifyFeedItems),
          ('/hits', ViewHits),
          ('/test', ViewTest)],
@@ -196,14 +213,14 @@ def get_new_items(key, url):
 def get_cached_items(key):
     global fetchTime
     if feedItems.has_key(key) and fetched_recently():
-        return feedItems[key]
+        return feedItems[key], False
     feed = Feed.get(key)
     fetchTime = datetime.now()
-    return get_new_items(key, feed.link)
+    return get_new_items(key, feed.link), True
 
 def fetched_recently():
-    return (fetchTime is None 
-        or fetchTime + timedelta(hours=2) < datetime.now())
+    return (fetchTime is not None 
+        and fetchTime + timedelta(hours=2) > datetime.now())
     
 def get_feed_key():
     return db.Key.from_path("Feed", "all")

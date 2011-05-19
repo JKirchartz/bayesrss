@@ -21,6 +21,15 @@ class Hit(db.Model):
     fetchFeedCount = db.IntegerProperty(default=0)
     since = db.DateTimeProperty(auto_now_add=True)
     
+    def countXmlServiceHit(self, headers):
+        self.xmlServiceHitCount += 1
+        self.headers = str(headers)
+        self.put()
+        
+    def countFetchFeedHit(self):
+        self.fetchFeedCount += 1
+        self.put()
+    
 class WordInfoEntity(db.Model):
     word = db.StringProperty()
     spamcount = db.IntegerProperty()
