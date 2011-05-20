@@ -30,20 +30,27 @@ classifier = Classifier()
 
 class ViewFeedXmlFiltered(webapp.RequestHandler):
     def get(self):
-        hitCounter.countXmlServiceHit(self.request.headers)
-        key = self.request.get('key')
-        feed = Feed.get(key)
-        items, fresh = get_cached_items(key)
+        do_filtered_xml(self.request, self.response, False)
         
-        filtered = []
-        for i in items:
-            if classifier.spamprob(i.getTokens()) < SPAM_THRESHOLD:
-                filtered.append(i)
-                
-        self.response.headers['Content-Type'] = 'text/xml'
-        self.response.out.write(
-            template.render(FEED_TEMPLATE_PATH, {"items":filtered, "feed":feed}))
+class ViewFeedXmlUnFiltered(webapp.RequestHandler):
+    def get(self):
+        do_filtered_xml(self.request, self.response, True)
 
+def do_filtered_xml(request, response, showFiltered):
+    hitCounter.countXmlServiceHit(request.headers)
+    key = request.get('key')
+    feed = Feed.get(key)
+    items, fresh = get_cached_items(key)
+    
+    filtered = []
+    for i in items:
+        if showFiltered and classifier.spamprob(i.getTokens()) > SPAM_THRESHOLD:
+            filtered.append(i)
+            
+    response.headers['Content-Type'] = 'text/xml'
+    response.out.write(
+        template.render(FEED_TEMPLATE_PATH, {"items":filtered, "feed":feed}))
+        
 class ViewFeedXml(webapp.RequestHandler):
     def get(self):
         hitCounter.countXmlServiceHit(self.request.headers)
@@ -141,6 +148,7 @@ application = webapp.WSGIApplication(
          ('/feed/items', ViewFeedHtml),
          ('/feed/xml', ViewFeedXml),
          ('/feed/xml/filtered', ViewFeedXmlFiltered),
+         ('/feed/xml/unfiltered', ViewFeedXmlUnFiltered),
          ('/feed/classify', ClassifyFeedItems),
          ('/hits', ViewHits),
          ('/test', ViewTest)],
