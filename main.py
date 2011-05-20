@@ -66,10 +66,9 @@ class ViewFeedHtml(webapp.RequestHandler):
     def get(self):
         key = self.request.get('key')
         items, fresh = get_cached_items(key)
-        
-        global itemDict
-        for it in items:
-            itemDict[str(hash(it))] = [it, classifier.spamprob(it.getTokens())]
+        if fresh:
+            for it in items:
+                itemDict[it.hash()] = [it, classifier.spamprob(it.getTokens()), False]
                 
         self.response.headers['Content-Type'] = 'text/html'
         self.response.out.write(
@@ -78,9 +77,7 @@ class ViewFeedHtml(webapp.RequestHandler):
 
 class EditFeeds(webapp.RequestHandler):
     def get(self):
-        key = self.request.get('key')
-        feed = Feed.get(key)
-        feed.delete()
+        Feed.get(self.request.get('key')).delete()
         self.redirect("/feeds")
 
 
@@ -129,17 +126,16 @@ class ClassifyFeedItems(webapp.RequestHandler):
         feed = self.request.get("feed")
         
         try:
-            item = itemDict[id][0]
+            item = itemDict[id]
         except:
             self.response.out.write("Error\n")
             self.response.out.write(str(itemDict))
             return
             
-        tokens = item.getTokens()
-        
-        classifier.learn(tokens, action=='bad')
+        classifier.learn(item[0].getTokens(), action=='bad')
         persist_classifier()
-        
+        item[1] = classifier.spamprob(item[0].getTokens())
+        item[2] = True
         self.redirect("/feed/items?key=" + feed)
 
 application = webapp.WSGIApplication(

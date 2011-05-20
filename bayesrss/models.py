@@ -1,4 +1,5 @@
 from google.appengine.ext import db
+from jhash import jhash
 
 class Item(db.Model):
     title = db.StringProperty(required=True)
@@ -9,6 +10,9 @@ class Item(db.Model):
 
     def getTokens(self):
         return self.title.split() + self.description.split()
+        
+    def hash(self):
+        return str(jhash(self.title + self.description))
 
 class Feed(db.Model):
     title = db.StringProperty()

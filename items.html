@@ -8,6 +8,13 @@ Count: {{ count }}
         <b>Description:</b> {{ item.0.description }}<br/>
         <b>Prob:</b> {{ item.1 }}<br/>
         <div>
+        {% if item.2 %}
+        <form action="/feed/undo" method="post">
+            <input type="hidden" name="id" value="{{ key }}">
+            <input type="hidden" name="feed" value="{{ feed }}">
+            <input type="submit" value="Undo">
+        </form>
+        {% else %}
         <form action="/feed/classify" method="post">
             <input type="hidden" name="id" value="{{ key }}">
             <input type="hidden" name="feed" value="{{ feed }}">
@@ -21,6 +28,7 @@ Count: {{ count }}
             <input type="submit" value="Bad">
         </form>
         </div>
+        {% endif %}
     </p>
 {% endfor %}
 </body>
