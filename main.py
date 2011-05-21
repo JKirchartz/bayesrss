@@ -118,25 +118,33 @@ class ViewFeeds(webapp.RequestHandler):
         feed.put()
         self.redirect("/feeds")
 
-
+class UnClassifyItem(webapp.RequestHandler):
+    def post(self):
+        classify(self.request, self.response, False)
+        
 class ClassifyFeedItems(webapp.RequestHandler):
     def post(self):
-        action = self.request.get("action")
-        id = self.request.get("id")
-        feed = self.request.get("feed")
+        classify(self.request, self.response, True)
         
-        try:
-            item = itemDict[id]
-        except:
-            self.response.out.write("Error\n")
-            self.response.out.write(str(itemDict))
-            return
-            
-        classifier.learn(item[0].getTokens(), action=='bad')
-        persist_classifier()
-        item[1] = classifier.spamprob(item[0].getTokens())
-        item[2] = True
-        self.redirect("/feed/items?key=" + feed)
+def classify(request, response, learn):
+    action = request.get("action")
+    id = request.get("id")
+    feed = request.get("feed")
+    try:
+        item = itemDict[id]
+    except:
+        response.out.write("No item found with ID=" + id + "\n")
+        response.out.write("Items:\n" + str(itemDict))
+        return
+    if learn:
+        classifier.learn(item[0].getTokens(), action=='spam')
+    else:
+        classifier.unlearn(item[0].getTokens())
+    persist_classifier()
+    item[1] = classifier.spamprob(item[0].getTokens())
+    item[2] = learn
+    response.out.write(item[1])
+
 
 application = webapp.WSGIApplication(
         [('/feeds', ViewFeeds),
@@ -146,6 +154,7 @@ application = webapp.WSGIApplication(
          ('/feed/xml/filtered', ViewFeedXmlFiltered),
          ('/feed/xml/unfiltered', ViewFeedXmlUnFiltered),
          ('/feed/classify', ClassifyFeedItems),
+         ('/feed/unclassify', UnClassifyItem),
          ('/feed/hits', ViewHits),
          ('/feed/test', ViewTest)],
         debug=True)

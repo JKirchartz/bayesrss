@@ -1,39 +1,19 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-<script type="text/javascript" src="static/jquery.js"></script>
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+<script type="text/javascript" src="/static/scripts.js"></script>
 </head>
 <body>
 Count: {{ count }}
+<div id="feed" key="{{ feed }}"></div>
 {% for key, item in itemDict.items %}
-    <p>
+    <div class="{% if item.2 %}classified{% else %}unclassified{% endif %}" id="{{ key }}">
         <b>Title:</b> {{ item.0.title }}<br/>
         <b>Description:</b> {{ item.0.description }}<br/>
         <b>Prob:</b> {{ item.1 }}<br/>
-        <div>
-        {% if item.2 %}
-        <form action="/feed/undo" method="post">
-            <input type="hidden" name="id" value="{{ key }}">
-            <input type="hidden" name="feed" value="{{ feed }}">
-            <input type="submit" value="Undo">
-        </form>
-        {% else %}
-        <form action="/feed/classify" method="post">
-            <input type="hidden" name="id" value="{{ key }}">
-            <input type="hidden" name="feed" value="{{ feed }}">
-            <input type="hidden" name="action" value="good">
-            <input type="submit" value="Good">
-        </form>
-        <form action="/feed/classify" method="post">
-            <input type="hidden" name="id" value="{{ key }}">
-            <input type="hidden" name="feed" value="{{ feed }}">
-            <input type="hidden" name="action" value="bad">
-            <input type="submit" value="Bad">
-        </form>
-        </div>
-        {% endif %}
-    </p>
+    </div>
+    <br/>
 {% endfor %}
 </body>
 </html>
