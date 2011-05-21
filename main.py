@@ -146,8 +146,8 @@ application = webapp.WSGIApplication(
          ('/feed/xml/filtered', ViewFeedXmlFiltered),
          ('/feed/xml/unfiltered', ViewFeedXmlUnFiltered),
          ('/feed/classify', ClassifyFeedItems),
-         ('/hits', ViewHits),
-         ('/test', ViewTest)],
+         ('/feed/hits', ViewHits),
+         ('/feed/test', ViewTest)],
         debug=True)
 
 def main():        
