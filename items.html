@@ -7,11 +7,11 @@
 <body>
 Count: {{ count }}
 <div id="feed" key="{{ feed }}"></div>
-{% for key, item in itemDict.items %}
-    <div class="{% if item.2 %}classified{% else %}unclassified{% endif %}" id="{{ key }}">
-        <b>Title:</b> {{ item.0.title }}<br/>
-        <b>Description:</b> {{ item.0.description }}<br/>
-        <b>Prob:</b> {{ item.1 }}<br/>
+{% for key, value in itemDict.items %}
+    <div class="{% if value.classified %}classified{% else %}unclassified{% endif %}" id="{{ key }}">
+        <b>Title:</b> {{ value.item.title }}<br/>
+        <b>Description:</b> {{ value.item.description }}<br/>
+        <b>Prob:</b> {{ value.probability }}<br/>
     </div>
     <br/>
 {% endfor %}

@@ -1,5 +1,6 @@
 import os,sys
 import urllib2
+import logging
 from xml.etree import cElementTree as etree
 from datetime import datetime, timedelta
 
@@ -68,7 +69,7 @@ class ViewFeedHtml(webapp.RequestHandler):
         items, fresh = get_cached_items(key)
         if fresh:
             for it in items:
-                itemDict[it.hash()] = [it, classifier.spamprob(it.getTokens()), False]
+                itemDict[it.hash()] = ItemClassification(it, classifier.spamprob(it.getTokens()))
                 
         self.response.headers['Content-Type'] = 'text/html'
         self.response.out.write(
@@ -130,20 +131,24 @@ def classify(request, response, learn):
     action = request.get("action")
     id = request.get("id")
     feed = request.get("feed")
+    isSpam = action=='spam'
+    logging.info("Classifying. id="+id+" feed="+feed+" action="+action+" learn="+str(learn))
     try:
-        item = itemDict[id]
+        value = itemDict[id]
     except:
         response.out.write("No item found with ID=" + id + "\n")
         response.out.write("Items:\n" + str(itemDict))
         return
     if learn:
-        classifier.learn(item[0].getTokens(), action=='spam')
+        classifier.learn(value.item.getTokens(), isSpam)
     else:
-        classifier.unlearn(item[0].getTokens())
+        classifier.unlearn(value.item.getTokens(), value.spam)
     persist_classifier()
-    item[1] = classifier.spamprob(item[0].getTokens())
-    item[2] = learn
-    response.out.write(item[1])
+    value.probability = classifier.spamprob(value.item.getTokens())
+    logging.info("prob="+str(value.probability))
+    value.classified = learn
+    value.spam = isSpam
+    response.out.write(value.probability)
 
 
 application = webapp.WSGIApplication(

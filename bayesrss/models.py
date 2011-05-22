@@ -42,3 +42,12 @@ class WordInfoEntity(db.Model):
 class SpamCounts(db.Model):
     nham = db.IntegerProperty()
     nspam = db.IntegerProperty()
+    
+class ItemClassification(object):   
+    def __init__(self, item, probability):
+        self.item = item
+        self.probability = probability
+        self.spam = False
+        self.classified = False
+        
+
