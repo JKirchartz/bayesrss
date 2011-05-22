@@ -5,6 +5,7 @@ from xml.etree import cElementTree as etree
 from datetime import datetime, timedelta
 
 from bayesrss.models import *
+from bayesrss.itemstore import ItemStore
 from spambayes.classifier import Classifier, WordInfo
 
 from google.appengine.dist import use_library
@@ -17,65 +18,58 @@ from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app
 
 SPAM_THRESHOLD = 0.95
+HAM_THRESHOLD = 0.1
 HIT_COUNTER_KEY = "key"
 SPAM_COUNT_KEY = "singleton"
 FEED_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'feed.xml')
 HTML_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'items.html')
 
-feedItems = {}
-itemDict = {}
+itemstore = None
 hitCounter = None
 start_time = datetime.now()
-fetchTime = None
 classifier = Classifier()
 
-class ViewFeedXmlFiltered(webapp.RequestHandler):
+class ViewXmlFeedHam(webapp.RequestHandler):
     def get(self):
-        do_filtered_xml(self.request, self.response, False)
+        do_filtered_xml(self.request, self.response, 0, HAM_THRESHOLD)
         
-class ViewFeedXmlUnFiltered(webapp.RequestHandler):
+class ViewXmlFeedSpam(webapp.RequestHandler):
     def get(self):
-        do_filtered_xml(self.request, self.response, True)
+        do_filtered_xml(self.request, self.response, SPAM_THRESHOLD, 1)
+    
+class ViewXmlFeedUnknown(webapp.RequestHandler):
+    def get(self):
+        do_filtered_xml(self.request, self.response, HAM_THRESHOLD, SPAM_THRESHOLD)
 
-def do_filtered_xml(request, response, showFiltered):
+class ViewXmlFeedAll(webapp.RequestHandler):
+    def get(self):
+        do_filtered_xml(self.request, self.response, 0, 1)
+        
+def do_filtered_xml(request, response, minProb, maxProb):
     hitCounter.countXmlServiceHit(request.headers)
     key = request.get('key')
     feed = Feed.get(key)
-    items, fresh = get_cached_items(key)
+    items, time = itemstore.get_items(key)
     
     filtered = []
     for i in items:
-        if showFiltered and classifier.spamprob(i.getTokens()) > SPAM_THRESHOLD:
+        spam_prob = classifier.spamprob(i.getTokens())
+        if minProb < spam_prob and spam_prob < maxProb:
             filtered.append(i)
             
     response.headers['Content-Type'] = 'text/xml'
     response.out.write(
         template.render(FEED_TEMPLATE_PATH, {"items":filtered, "feed":feed}))
         
-class ViewFeedXml(webapp.RequestHandler):
-    def get(self):
-        hitCounter.countXmlServiceHit(self.request.headers)
-        key = self.request.get('key')
-        feed = Feed.get(key)
-        items, fresh = get_cached_items(key)
 
-        self.response.headers['Content-Type'] = 'text/xml'
-        self.response.out.write(
-            template.render(FEED_TEMPLATE_PATH, {"items":items, "feed":feed}))
-
-class ViewFeedHtml(webapp.RequestHandler):
+class ViewFeedHtml(webapp.RequestHandler):    
     def get(self):
         key = self.request.get('key')
-        items, fresh = get_cached_items(key)
-        if fresh:
-            for it in items:
-                itemDict[it.hash()] = ItemClassification(it, classifier.spamprob(it.getTokens()))
-                
+        itemDict = itemstore.getDictionary(key)    
         self.response.headers['Content-Type'] = 'text/html'
         self.response.out.write(
-            template.render(HTML_TEMPLATE_PATH, {"itemDict":itemDict, "count":len(items), "feed":key}))
-
-
+            template.render(HTML_TEMPLATE_PATH, {"itemDict":itemDict, "count":len(itemDict.items()), "feed":key}))
+        
 class EditFeeds(webapp.RequestHandler):
     def get(self):
         Feed.get(self.request.get('key')).delete()
@@ -126,7 +120,7 @@ class UnClassifyItem(webapp.RequestHandler):
 class ClassifyFeedItems(webapp.RequestHandler):
     def post(self):
         classify(self.request, self.response, True)
-        
+
 def classify(request, response, learn):
     action = request.get("action")
     id = request.get("id")
@@ -134,10 +128,10 @@ def classify(request, response, learn):
     isSpam = action=='spam'
     logging.info("Classifying. id="+id+" feed="+feed+" action="+action+" learn="+str(learn))
     try:
-        value = itemDict[id]
+        value = itemstore.getItem(id)
     except:
         response.out.write("No item found with ID=" + id + "\n")
-        response.out.write("Items:\n" + str(itemDict))
+        response.out.write("Items:\n" + itemstore.getDictionary(feed))
         return
     if learn:
         classifier.learn(value.item.getTokens(), isSpam)
@@ -155,9 +149,10 @@ application = webapp.WSGIApplication(
         [('/feeds', ViewFeeds),
          ('/feed/delete', EditFeeds),
          ('/feed/items', ViewFeedHtml),
-         ('/feed/xml', ViewFeedXml),
-         ('/feed/xml/filtered', ViewFeedXmlFiltered),
-         ('/feed/xml/unfiltered', ViewFeedXmlUnFiltered),
+         ('/feed/xml', ViewXmlFeedAll),
+         ('/feed/xml/spam', ViewXmlFeedSpam),
+         ('/feed/xml/ham', ViewXmlFeedHam),
+         ('/feed/xml/unknown', ViewXmlFeedUnknown),
          ('/feed/classify', ClassifyFeedItems),
          ('/feed/unclassify', UnClassifyItem),
          ('/feed/hits', ViewHits),
@@ -167,6 +162,9 @@ application = webapp.WSGIApplication(
 def main():        
     load_hitcounter()
     load_classifier()
+    
+    global itemstore
+    itemstore = ItemStore(hitCounter, classifier)
     
     run_wsgi_app(application)
     #    items = {}
@@ -211,34 +209,6 @@ def get_feed_details(feed):
         feed.title = channel.find("title").text
         feed.description = channel.find("description").text
 
-
-def get_new_items(key, url):
-    hitCounter.countFetchFeedHit()
-    xml = urllib2.urlopen(url).read()
-    items = []
-    tree = etree.fromstring(xml)
-    for node in tree.find("channel").findall("item"):
-        item = Item(parent = get_feed_key(),
-                    title = node.find("title").text,
-                    description = node.find("description").text,
-                    link = node.find("link").text)
-        item.pubdate = node.find("pubDate").text
-        items.append(item)
-    if key:
-        feedItems[key] = items
-    return items
-
-def get_cached_items(key):
-    global fetchTime
-    if feedItems.has_key(key) and fetched_recently():
-        return feedItems[key], False
-    feed = Feed.get(key)
-    fetchTime = datetime.now()
-    return get_new_items(key, feed.link), True
-
-def fetched_recently():
-    return (fetchTime is not None 
-        and fetchTime + timedelta(hours=2) > datetime.now())
     
 def get_feed_key():
     return db.Key.from_path("Feed", "all")

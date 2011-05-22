@@ -1,5 +1,6 @@
 from google.appengine.ext import db
 from jhash import jhash
+from datetime import datetime, timedelta
 
 class Item(db.Model):
     title = db.StringProperty(required=True)
@@ -44,10 +45,13 @@ class SpamCounts(db.Model):
     nspam = db.IntegerProperty()
     
 class ItemClassification(object):   
-    def __init__(self, item, probability):
+    def __init__(self, item, probability, time):
         self.item = item
         self.probability = probability
         self.spam = False
         self.classified = False
-        
+        self.fetch_time = time
+    
+    def isStale(self):
+        return self.fetch_time + timedelta(days=1) < datetime.now()
 
