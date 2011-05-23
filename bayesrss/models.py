@@ -7,6 +7,7 @@ class Item(db.Model):
     description = db.StringProperty(required=True, multiline=True)
     link = db.StringProperty(required=True)
     pubdate = db.StringProperty()
+    pub_datetime = db.DateTimeProperty()
     guid = db.StringProperty()
 
     def getTokens(self):
@@ -45,13 +46,13 @@ class SpamCounts(db.Model):
     nspam = db.IntegerProperty()
     
 class ItemClassification(object):   
-    def __init__(self, item, probability, time):
+    def __init__(self, item, probability, pub_time):
         self.item = item
         self.probability = probability
         self.spam = False
         self.classified = False
-        self.fetch_time = time
+        self.pub_time = pub_time
     
     def isStale(self):
-        return self.fetch_time + timedelta(days=1) < datetime.now()
+        return self.pub_time + timedelta(days=1) < datetime.now()
 

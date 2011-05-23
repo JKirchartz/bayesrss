@@ -3,6 +3,7 @@ import urllib2
 import logging
 from xml.etree import cElementTree as etree
 from datetime import datetime, timedelta
+from operator import attrgetter
 
 from bayesrss.models import *
 from bayesrss.itemstore import ItemStore
@@ -65,10 +66,12 @@ def do_filtered_xml(request, response, minProb, maxProb):
 class ViewFeedHtml(webapp.RequestHandler):    
     def get(self):
         key = self.request.get('key')
-        itemDict = itemstore.getDictionary(key)    
+        item_dict = itemstore.getDictionary(key)
+        item_list = item_dict.values()
+        item_list.sort(key=attrgetter('pub_time'))
         self.response.headers['Content-Type'] = 'text/html'
         self.response.out.write(
-            template.render(HTML_TEMPLATE_PATH, {"itemDict":itemDict, "count":len(itemDict.items()), "feed":key}))
+            template.render(HTML_TEMPLATE_PATH, {"item_list":item_list, "count":len(item_list), "feed":key}))
         
 class EditFeeds(webapp.RequestHandler):
     def get(self):

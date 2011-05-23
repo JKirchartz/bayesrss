@@ -1,6 +1,7 @@
 import urllib2
 import logging
 from xml.etree import cElementTree as etree
+from email.utils import parsedate
 
 from bayesrss.models import *
 
@@ -32,7 +33,7 @@ class ItemStore():
                     del self.itemstore[key]
             for it in items:
                 if not self.itemstore.has_key(it.hash()):
-                    self.itemstore[it.hash()] = ItemClassification(it, self.classifier.spamprob(it.getTokens()), fetchtime)
+                    self.itemstore[it.hash()] = ItemClassification(it, self.classifier.spamprob(it.getTokens()), it.pub_datetime)
         return self.itemstore
     
     def getItem(self, key):
@@ -48,6 +49,8 @@ class ItemStore():
                         description = node.find("description").text,
                         link = node.find("link").text)
             item.pubdate = node.find("pubDate").text
+            tupl = parsedate(item.pubdate)
+            item.pub_datetime = datetime(*tupl[:6])
             items.append(item)
         return items
     
