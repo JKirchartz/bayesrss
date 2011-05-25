@@ -7,7 +7,7 @@ from operator import attrgetter
 
 from bayesrss.models import *
 from bayesrss.itemstore import ItemStore
-from spambayes.classifier import Classifier, WordInfo
+from bayesrss.classification import *
 
 from google.appengine.dist import use_library
 use_library('django', '1.2')
@@ -17,6 +17,7 @@ from google.appengine.ext import db
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app
+from google.appengine.api import memcache
 
 SPAM_THRESHOLD = 0.95
 HAM_THRESHOLD = 0.1
@@ -28,7 +29,7 @@ HTML_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'items.html')
 itemstore = None
 hitCounter = None
 start_time = datetime.now()
-classifier = Classifier()
+classifier = None
 
 class ViewXmlFeedHam(webapp.RequestHandler):
     def get(self):
@@ -53,6 +54,7 @@ def do_filtered_xml(request, response, minProb, maxProb):
     items, time = itemstore.get_items(key)
     
     filtered = []
+    classifier = get_classifier()
     for i in items:
         spam_prob = classifier.spamprob(i.getTokens())
         if minProb < spam_prob and spam_prob < maxProb:
@@ -82,8 +84,8 @@ class EditFeeds(webapp.RequestHandler):
 class ViewTest(webapp.RequestHandler):
     def get(self):
         self.response.headers['Content-Type'] = 'text/plain'
-        self.response.out.write(str(classifier.nspam) + "\n")
-        self.response.out.write(str(classifier.nham))
+        self.response.out.write(str(get_classifier().nspam) + "\n")
+        self.response.out.write(str(get_classifier().nham))
 
 #        items = get_new_items('http://www.abc.net.au/news/syndicate/breakingrss.xml')
 #        self.response.out.write(hash(items[0]))
@@ -133,9 +135,12 @@ def classify(request, response, learn):
     try:
         value = itemstore.getItem(id)
     except:
-        response.out.write("No item found with ID=" + id + "\n")
-        response.out.write("Items:\n" + itemstore.getDictionary(feed))
+        logging.error("No item found with ID=" + id + "\n")
+        logging.error("Items:\n" + str(itemstore.getDictionary(feed)))
+        response.error()
         return
+        
+    classifier = get_classifier()
     if learn:
         classifier.learn(value.item.getTokens(), isSpam)
     else:
@@ -164,41 +169,14 @@ application = webapp.WSGIApplication(
 
 def main():        
     load_hitcounter()
-    load_classifier()
+    get_classifier()
     
     global itemstore
-    itemstore = ItemStore(hitCounter, classifier)
+    itemstore = ItemStore(hitCounter, get_classifier)
     
     run_wsgi_app(application)
-    #    items = {}
-    #    while True:
-    #        sys.sleep(30)
-    #        new_items = get_new_items('http://www.abc.net.au/news/syndicate/breakingrss.xml')
 
-
-def load_classifier():
-    counts = SpamCounts.get_by_key_name(SPAM_COUNT_KEY)
-    if counts:
-        classifier.nham = counts.nham
-        classifier.nspam = counts.nspam
-    
-    wordInfos = WordInfoEntity.all()
-    for info in wordInfos:
-        w = WordInfo()
-        w.spamcount = info.spamcount
-        w.hamcount = info.hamcount
-        classifier.wordinfo[info.word] = w
-
-def persist_classifier():
-    counts = SpamCounts(key_name=SPAM_COUNT_KEY, nham=classifier.nham, nspam=classifier.nspam)
-    entities = [counts]
-    for word, info in classifier.wordinfo.items():
-        entities.append(WordInfoEntity(key_name=word, 
-            word=word, 
-            spamcount=info.spamcount, 
-            hamcount=info.hamcount))
-    db.put(entities)
-    
+        
 def load_hitcounter():
     global hitCounter
     hitCounter = Hit.get_or_insert(HIT_COUNTER_KEY)

@@ -8,7 +8,7 @@
 Count: {{ count }}
 <div id="feed" key="{{ feed }}"></div>
 {% for item_info in item_list %}
-    <div class="{% if item_info.classified %}classified{% else %}unclassified{% endif %}" id="{{ item_info.key }}">
+    <div class="{% if item_info.classified %}classified{% else %}unclassified{% endif %}" id="{{ item_info.item.hash }}">
         <b>Title:</b> {{ item_info.item.title }}<br/>
         <b>Description:</b> {{ item_info.item.description }}<br/>
         <b>Prob:</b> {{ item_info.probability }}<br/>

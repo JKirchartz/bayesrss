@@ -31,9 +31,10 @@ class ItemStore():
             for key, value in self.itemstore.items():
                 if value.isStale():
                     del self.itemstore[key]
+            classifier = self.classifier()
             for it in items:
                 if not self.itemstore.has_key(it.hash()):
-                    self.itemstore[it.hash()] = ItemClassification(it, self.classifier.spamprob(it.getTokens()), it.pub_datetime)
+                    self.itemstore[it.hash()] = ItemClassification(it, classifier.spamprob(it.getTokens()), it.pub_datetime)
         return self.itemstore
     
     def getItem(self, key):

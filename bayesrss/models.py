@@ -9,7 +9,7 @@ class Item(db.Model):
     pubdate = db.StringProperty()
     pub_datetime = db.DateTimeProperty()
     guid = db.StringProperty()
-
+ 
     def getTokens(self):
         return self.title.split() + self.description.split()
         
