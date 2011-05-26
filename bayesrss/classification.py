@@ -21,12 +21,16 @@ def do_persist():
         classifier = get_classifier()
         counts = SpamCounts(key_name=SPAM_COUNT_KEY, nham=classifier.nham, nspam=classifier.nspam)
         entities = [counts]
-        for word, info in classifier.wordinfo.items():
+        for word in classifier.dirty:
+            info = classifier.wordinfo[word]
             entities.append(WordInfoEntity(key_name=word, 
                 word=word, 
                 spamcount=info.spamcount, 
                 hamcount=info.hamcount))
+        classifier.clean()
         db.put(entities)
+        _do_memchache_set(classifier)
+        logging.info("Persisted " + str(len(entities)) + " of " + str(len(classifier.wordinfo.keys())) + " entities")
         
 def get_classifier():
     classifier = memcache.get(CLASSIFIER_KEY)
@@ -47,6 +51,10 @@ def get_classifier():
         memcache.add(CLASSIFIER_KEY, classifier)
     return classifier
     
-def persist_classifier():
+def _do_memchache_set(classifier):
+    memcache.set(CLASSIFIER_KEY, classifier)
+    
+def persist_classifier(classifier):
     memcache.set("classifier_dirty", True)
-    deferred.defer(do_persist, _countdown=30)
+    _do_memchache_set(classifier)
+    deferred.defer(do_persist, _countdown=180)

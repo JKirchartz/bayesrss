@@ -145,7 +145,7 @@ def classify(request, response, learn):
         classifier.learn(value.item.getTokens(), isSpam)
     else:
         classifier.unlearn(value.item.getTokens(), value.spam)
-    persist_classifier()
+    persist_classifier(classifier)
     value.probability = classifier.spamprob(value.item.getTokens())
     logging.info("prob="+str(value.probability))
     value.classified = learn

@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+
 from __future__ import generators
 
 # An implementation of a Bayes-like spam classifier.
@@ -36,6 +37,7 @@ from __future__ import generators
 # of scores, and good cutoff values aren't touchy).
 #
 # This implementation is due to Tim Peters et alia.
+
 
 import math
 import types
@@ -130,14 +132,15 @@ class Classifier:
         self.wordinfo = {}
         self.probcache = {}
         self.nspam = self.nham = 0
+        self.dirty = set()
 
     def __getstate__(self):
-        return (PICKLE_VERSION, self.wordinfo, self.nspam, self.nham)
+        return (PICKLE_VERSION, self.wordinfo, self.nspam, self.nham, self.dirty)
 
     def __setstate__(self, t):
         if t[0] != PICKLE_VERSION:
             raise ValueError("Can't unpickle -- version %s unknown" % t[0])
-        (self.wordinfo, self.nspam, self.nham) = t[1:]
+        (self.wordinfo, self.nspam, self.nham, self.dirty) = t[1:]
         self.probcache = {}
 
     # spamprob() implementations.  One of the following is aliased to
@@ -258,7 +261,10 @@ class Classifier:
             spamprob = slurping_spamprob
         else:
             spamprob = chi2_spamprob
-
+            
+    def clean(self):
+        self.dirty.clear()
+        
     def learn(self, wordstream, is_spam):
         """Teach the classifier by example.
 
@@ -376,11 +382,12 @@ class Classifier:
             if record is None:
                 record = self.WordInfoClass()
 
+            self.dirty.add(word)
             if is_spam:
                 record.spamcount += 1
             else:
                 record.hamcount += 1
-
+                
             self._wordinfoset(word, record)
 
         self._post_training()
@@ -399,6 +406,7 @@ class Classifier:
         for word in Set(wordstream):
             record = self._wordinfoget(word)
             if record is not None:
+                self.dirty.add(word)
                 if is_spam:
                     if record.spamcount > 0:
                         record.spamcount -= 1
