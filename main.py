@@ -70,7 +70,7 @@ class ViewFeedHtml(webapp.RequestHandler):
         key = self.request.get('key')
         item_dict = itemstore.getDictionary(key)
         item_list = item_dict.values()
-        item_list.sort(key=attrgetter('pub_time'))
+        item_list.sort(key=attrgetter('pub_time'), reverse=True)
         self.response.headers['Content-Type'] = 'text/html'
         self.response.out.write(
             template.render(HTML_TEMPLATE_PATH, {"item_list":item_list, "count":len(item_list), "feed":key}))
@@ -167,12 +167,14 @@ application = webapp.WSGIApplication(
          ('/feed/test', ViewTest)],
         debug=True)
 
-def main():        
-    load_hitcounter()
-    get_classifier()
-    
+def main():
     global itemstore
-    itemstore = ItemStore(hitCounter, get_classifier)
+    if itemstore is None:
+        first_load = False
+        logging.info("RELOADING MAIN")
+        load_hitcounter()
+        get_classifier()
+        itemstore = ItemStore(hitCounter, get_classifier)
     
     run_wsgi_app(application)
 
@@ -195,4 +197,4 @@ def get_feed_key():
     return db.Key.from_path("Feed", "all")
 
 if __name__ == '__main__':
-  main()
+    main()
