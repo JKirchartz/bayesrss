@@ -1,7 +1,14 @@
-from google.appengine.ext import db
-from jhash import jhash
+import re
+import logging
 from datetime import datetime, timedelta
 
+from google.appengine.ext import db
+from jhash import jhash
+
+from bayesrss.safewords import safewords
+
+splitter = re.compile("[\W]")
+    
 class Item(db.Model):
     title = db.StringProperty(required=True)
     description = db.StringProperty(required=True, multiline=True)
@@ -11,7 +18,11 @@ class Item(db.Model):
     guid = db.StringProperty()
  
     def getTokens(self):
-        return self.title.split() + self.description.split()
+        if not hasattr(self, 'tokens'):
+            split = filter(None, splitter.split(self.title) + splitter.split(self.description))
+            self.tokens = list(set(split) - safewords)
+            logging.info("safewords reduced from " + str(len(split)) + " to " + str(len(self.tokens)))
+        return self.tokens
         
     def hash(self):
         return str(jhash(self.title + self.description))

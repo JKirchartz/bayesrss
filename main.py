@@ -170,15 +170,27 @@ application = webapp.WSGIApplication(
 def main():
     global itemstore
     if itemstore is None:
-        first_load = False
         logging.info("RELOADING MAIN")
         load_hitcounter()
         get_classifier()
         itemstore = ItemStore(hitCounter, get_classifier)
-    
+    #do_stuff()
     run_wsgi_app(application)
 
-        
+def do_stuff():
+    wordInfos = WordInfoEntity.all()
+    import re
+    splitter = re.compile("[\W]")
+    count = all = 0
+    for info in wordInfos:
+        all += 1
+        tokens = filter(None, splitter.split(info.word))
+        if len(tokens) > 0 and info.word != tokens[0]:
+            logging.info(info.word + ": " + str(tokens))
+            count += 1
+            info.delete()
+    logging.info("Length: " + str(count) + " of " + str(all)) 
+                
 def load_hitcounter():
     global hitCounter
     hitCounter = Hit.get_or_insert(HIT_COUNTER_KEY)
