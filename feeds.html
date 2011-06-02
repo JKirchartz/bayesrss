@@ -11,6 +11,10 @@
         <b>Title:</b> {{ feed.title }}<br/>
         <b>Description:</b> {{ feed.description }}<br/>
         <b>Link:</b> <a href="{{ feed.link }}">{{ feed.link }}</a><br/>
+        <form>
+            Aggregated: <input type="checkbox" value="{{ feed.is_aggregated }}">
+            De-duplicated: <input type="checkbox" value="{{ feed.is_deduplicated }}">
+        </form>
         <a href="/feed/items?key={{ feed.key }}">View</a>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         <a href="/feed/delete?key={{ feed.key }}">Delete</a><br/>

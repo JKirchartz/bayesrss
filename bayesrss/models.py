@@ -31,7 +31,12 @@ class Feed(db.Model):
     title = db.StringProperty()
     description = db.StringProperty(multiline=True)
     link = db.StringProperty()
-
+    
+    is_aggregated = db.BooleanProperty()
+    is_deduplicated = db.BooleanProperty()
+    is_filtered = db.BooleanProperty()
+    is_seek_mined = db.BooleanProperty()
+    
 class Hit(db.Model):
     headers = db.StringProperty()
     xmlServiceHitCount = db.IntegerProperty(default=0)
