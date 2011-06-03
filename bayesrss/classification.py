@@ -11,19 +11,25 @@ from google.appengine.api import memcache
 SPAM_COUNT_KEY = "singleton"
 CLASSIFIER_KEY = "classifier"
 
-def do_persist():
+def do_persist(feed):
     logging.info("Starting persist")
-    #This is both non-atomic and volatile - but the worst case is an unnecessary save
-    dirty = memcache.get("classifier_dirty")
-    memcache.set("classifier_dirty", False)
+    dirty_key = "classifier_" + feed.key()
+    dirty = memcache.get(dirty_key)
     if dirty is None or dirty:
         logging.info("Classifier is dirty")
-        classifier = get_classifier()
-        counts = SpamCounts(key_name=SPAM_COUNT_KEY, nham=classifier.nham, nspam=classifier.nspam)
+        memcache.set(dirty_key, False)
+        classifier = get_classifier(feed)
+        counts = SpamCounts(
+            parent=feed, 
+            key_name=SPAM_COUNT_KEY, 
+            nham=classifier.nham, 
+            nspam=classifier.nspam)
         entities = [counts]
         for word in classifier.dirty:
             info = classifier.wordinfo[word]
-            entities.append(WordInfoEntity(key_name=word, 
+            entities.append(WordInfoEntity(
+                parent=feed
+                key_name=word, 
                 word=word, 
                 spamcount=info.spamcount, 
                 hamcount=info.hamcount))
@@ -43,7 +49,7 @@ def get_classifier(feed):
             classifier.nham = counts.nham
             classifier.nspam = counts.nspam
         
-        wordInfos = WordInfoEntity.all()
+        wordInfos = db.GqlQuery("SELECT * FROM WordInfoEntity WHERE ANCESTOR IS :1", feed)
         for info in wordInfos:
             w = WordInfo()
             w.spamcount = info.spamcount
