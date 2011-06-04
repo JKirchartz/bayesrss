@@ -54,7 +54,7 @@ def do_filtered_xml(request, response, minProb, maxProb):
     items, time = itemstore.get_items(key)
     
     filtered = []
-    classifier = get_classifier()
+    classifier = get_classifier(feed)
     for i in items:
         spam_prob = classifier.spamprob(i.getTokens())
         if minProb < spam_prob and spam_prob < maxProb:
@@ -68,7 +68,7 @@ def do_filtered_xml(request, response, minProb, maxProb):
 class ViewFeedHtml(webapp.RequestHandler):    
     def get(self):
         key = self.request.get('key')
-        item_dict = itemstore.getDictionary(key)
+        item_dict = itemstore.get_dictionary(key)
         item_list = item_dict.values()
         item_list.sort(key=attrgetter('pub_time'), reverse=True)
         self.response.headers['Content-Type'] = 'text/html'
@@ -84,8 +84,8 @@ class EditFeeds(webapp.RequestHandler):
 class ViewTest(webapp.RequestHandler):
     def get(self):
         self.response.headers['Content-Type'] = 'text/plain'
-        self.response.out.write(str(get_classifier().nspam) + "\n")
-        self.response.out.write(str(get_classifier().nham))
+        self.response.out.write(str(get_classifier(feed).nspam) + "\n")
+        self.response.out.write(str(get_classifier(feed).nham))
 
 #        items = get_new_items('http://www.abc.net.au/news/syndicate/breakingrss.xml')
 #        self.response.out.write(hash(items[0]))
@@ -120,37 +120,38 @@ class ViewFeeds(webapp.RequestHandler):
 
 class UnClassifyItem(webapp.RequestHandler):
     def post(self):
-        classify(self.request, self.response, False)
+        classify(self, False)
         
 class ClassifyFeedItems(webapp.RequestHandler):
     def post(self):
-        classify(self.request, self.response, True)
+        classify(self, True)
 
-def classify(request, response, learn):
-    action = request.get("action")
-    id = request.get("id")
-    feed = request.get("feed")
-    isSpam = action=='spam'
-    logging.info("Classifying. id="+id+" feed="+feed+" action="+action+" learn="+str(learn))
+def classify(handler, learn):
+    action = handler.request.get("action")
+    id = handler.request.get("id")
+    feed_key = handler.request.get("feed")
+    isSpam = action == 'spam'
+    logging.info("Classifying. id="+id+" feed="+feed_key+" action="+action+" learn="+str(learn))
     try:
-        value = itemstore.getItem(id)
+        value = itemstore.get_item(feed_key, id)
     except:
         logging.error("No item found with ID=" + id + "\n")
-        logging.error("Items:\n" + str(itemstore.getDictionary(feed)))
-        response.error()
+        logging.error("Items:\n" + str(itemstore.get_dictionary(feed_key)))
+        logging.error(sys.exc_info())
+        handler.error(500)
         return
         
-    classifier = get_classifier()
+    classifier = get_classifier(feed_key)
     if learn:
         classifier.learn(value.item.getTokens(), isSpam)
     else:
         classifier.unlearn(value.item.getTokens(), value.spam)
-    persist_classifier(classifier)
+    persist_classifier(classifier, feed_key)
     value.probability = classifier.spamprob(value.item.getTokens())
     logging.info("prob="+str(value.probability))
     value.classified = learn
     value.spam = isSpam
-    response.out.write(value.probability)
+    handler.response.out.write(value.probability)
 
 
 application = webapp.WSGIApplication(
@@ -172,24 +173,27 @@ def main():
     if itemstore is None:
         logging.info("RELOADING MAIN")
         load_hitcounter()
-        get_classifier()
+        #get_classifier()
         itemstore = ItemStore(hitCounter, get_classifier)
     #do_stuff()
     run_wsgi_app(application)
 
 def do_stuff():
-    wordInfos = WordInfoEntity.all()
-    import re
-    splitter = re.compile("[\W]")
-    count = all = 0
+    feed = Feed.get('aghiYXllc3Jzc3IXCxIERmVlZCIDYWxsDAsSBEZlZWQYAQw')
+    wordInfos = db.GqlQuery("SELECT * FROM WordInfoEntity WHERE ANCESTOR IS :1", feed.key())
     for info in wordInfos:
-        all += 1
-        tokens = filter(None, splitter.split(info.word))
-        if len(tokens) > 0 and info.word != tokens[0]:
-            logging.info(info.word + ": " + str(tokens))
-            count += 1
-            info.delete()
-    logging.info("Length: " + str(count) + " of " + str(all)) 
+        logging.info(str(info.word))
+    #wordInfos = WordInfoEntity.all()
+    #entities = []
+    #for info in wordInfos:
+    #    entities.append(WordInfoEntity(
+    #        parent=feed.key(),
+    #        key_name=str(feed.key()) + "_" + info.word, 
+    #        word=info.word, 
+    #        spamcount=info.spamcount, 
+    #        hamcount=info.hamcount))
+    #db.put(entities)
+    #logging.info("Length: " + str(count) + " of " + str(all)) 
                 
 def load_hitcounter():
     global hitCounter

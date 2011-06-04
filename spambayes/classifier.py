@@ -128,21 +128,22 @@ class Classifier:
     # allow a subclass to use a different class for WordInfo
     WordInfoClass = WordInfo
 
-    def __init__(self):
+    def __init__(self, key):
         self.wordinfo = {}
         self.probcache = {}
         self.nspam = self.nham = 0
         self.dirty = set()
-
+        self.key = key
+        
     def __getstate__(self):
-        return (PICKLE_VERSION, self.wordinfo, self.nspam, self.nham, self.dirty)
+        return (PICKLE_VERSION, self.wordinfo, self.nspam, self.nham, self.dirty, self.key)
 
     def __setstate__(self, t):
         if t[0] != PICKLE_VERSION:
             raise ValueError("Can't unpickle -- version %s unknown" % t[0])
-        (self.wordinfo, self.nspam, self.nham, self.dirty) = t[1:]
+        (self.wordinfo, self.nspam, self.nham, self.dirty, self.key) = t[1:]
         self.probcache = {}
-
+        
     # spamprob() implementations.  One of the following is aliased to
     # spamprob, depending on option settings.
     # Currently only chi-squared is available, but maybe there will be

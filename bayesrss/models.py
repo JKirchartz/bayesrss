@@ -19,7 +19,8 @@ class Item(db.Model):
  
     def getTokens(self):
         if not hasattr(self, 'tokens'):
-            split = filter(None, splitter.split(self.title) + splitter.split(self.description))
+            split = filter(None, splitter.split(self.title.lower()) + 
+                                splitter.split(self.description.lower()))
             self.tokens = list(set(split) - safewords)
             logging.info("safewords reduced from " + str(len(split)) + " to " + str(len(self.tokens)))
         return self.tokens
