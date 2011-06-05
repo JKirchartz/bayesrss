@@ -33,33 +33,36 @@ classifier = None
 
 class ViewXmlFeedHam(webapp.RequestHandler):
     def get(self):
-        do_filtered_xml(self.request, self.response, 0, HAM_THRESHOLD)
+        do_filtered_xml(self.request, self.response, True, maxProb=HAM_THRESHOLD)
         
 class ViewXmlFeedSpam(webapp.RequestHandler):
     def get(self):
-        do_filtered_xml(self.request, self.response, SPAM_THRESHOLD, 1)
+        do_filtered_xml(self.request, self.response, True, minProb=SPAM_THRESHOLD)
     
 class ViewXmlFeedUnknown(webapp.RequestHandler):
     def get(self):
-        do_filtered_xml(self.request, self.response, HAM_THRESHOLD, SPAM_THRESHOLD)
+        do_filtered_xml(self.request, self.response, True, HAM_THRESHOLD, SPAM_THRESHOLD)
 
 class ViewXmlFeedAll(webapp.RequestHandler):
     def get(self):
-        do_filtered_xml(self.request, self.response, 0, 1)
+        do_filtered_xml(self.request, self.response, False)
         
-def do_filtered_xml(request, response, minProb, maxProb):
+def do_filtered_xml(request, response, do_filter, minProb=0, maxProb=1):
     hitCounter.countXmlServiceHit(request.headers)
     key = request.get('key')
     feed = Feed.get(key)
-    items, time = itemstore.get_items(key)
+    items = itemstore.get_items(key).items
     
     filtered = []
-    classifier = get_classifier(feed)
-    for i in items:
-        spam_prob = classifier.spamprob(i.getTokens())
-        if minProb < spam_prob and spam_prob < maxProb:
-            filtered.append(i)
-            
+    if do_filter:
+        classifier = get_classifier(key)
+        for i in items:
+            spam_prob = classifier.spamprob(i.getTokens())
+            if minProb < spam_prob and spam_prob < maxProb:
+                filtered.append(i)
+    else:
+        filtered.append(items)
+        
     response.headers['Content-Type'] = 'text/xml'
     response.out.write(
         template.render(FEED_TEMPLATE_PATH, {"items":filtered, "feed":feed}))
@@ -176,8 +179,20 @@ def main():
         #get_classifier()
         itemstore = ItemStore(hitCounter, get_classifier)
     #do_stuff()
+    #make_seek_feeds()
     run_wsgi_app(application)
 
+def make_seek_feeds():
+    feeds = Feed.all()
+    for f in feeds:
+        logging.info("Looking at feed " + f.title)
+        logging.info(f.link)
+        if f.link.startswith(" http://rss.seek.com.au"):
+            logging.info("Found a seek feed")
+            f.is_seek_mined = True
+            f.link = f.link.lstrip()
+            f.put()
+            
 def do_stuff():
     feed = Feed.get('aghiYXllc3Jzc3IXCxIERmVlZCIDYWxsDAsSBEZlZWQYAQw')
     wordInfos = db.GqlQuery("SELECT * FROM WordInfoEntity WHERE ANCESTOR IS :1", feed.key())

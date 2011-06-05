@@ -28,6 +28,12 @@ class Item(db.Model):
     def hash(self):
         return str(jhash(self.title + self.description))
 
+#class SeekItem(Item):
+#    def get_tokens(self):
+#        if not hasattr(self, 'tokens'):
+#            pass
+#        return None
+            
 class Feed(db.Model):
     title = db.StringProperty()
     description = db.StringProperty(multiline=True)

@@ -4,8 +4,10 @@ from bayesrss.models import *
 from bayesrss.fetcher import *
 
 class FeedInfo:
-    def __init__(self, items, fetchtime):
+    def __init__(self, items, link, fetch_function, fetchtime):
         self.items = items
+        self.link = link
+        self.fetch_function = fetch_function
         self.fetchtime = fetchtime
         self.itemstore = {}
         
@@ -50,10 +52,18 @@ class ItemStore:
                 logging.info("get_items: Returning items from cache")
             else:
                 logging.info("get_items: Fetched new items")
-                feed_info.items = fetch_items(key)
+                feed_info.items = feed_info.fetch_function(feed_info.link)
                 feed_info.fetchtime = datetime.now()
             return feed_info
-        feed_item = FeedInfo(fetch_items(key), datetime.now())
+            
+        feed = Feed.get(key)
+        if feed.is_seek_mined:
+            logging.info("Found a seek feed: " + feed.title)
+            feed_item = FeedInfo(fetch_seek_items(feed.link), feed.link, fetch_seek_items, datetime.now())
+        else:
+            logging.info("Found a NON-seek feed: " + feed.title)
+            feed_item = FeedInfo(fetch_items(feed.link), feed.link, fetch_items, datetime.now())
+        
         self.feedstore[key] = feed_item
         logging.info("get_items: created new FeedInfo")
         return feed_item  
