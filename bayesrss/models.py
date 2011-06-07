@@ -34,9 +34,9 @@ class Item():
             for s in strings:
                 toks += splitter.split(s.lower())
             split = filter(None, toks)
-            logging.info("Pre-cleaned tokens: " + str(split))
+            #logging.info("Pre-cleaned tokens: " + str(split))
             self._tokens = list(set(split) - safewords)
-            logging.info("safewords reduced from " + str(len(split)) + " to " + str(len(self._tokens)))
+            #logging.info("safewords reduced from " + str(len(split)) + " to " + str(len(self._tokens)))
         return self._tokens
         
     def hash(self):

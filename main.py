@@ -206,7 +206,7 @@ def make_seek_feeds():
             f.put()
             
 def do_stuff():
-    feed = Feed.get('')
+    feed = Feed.get('aghiYXllc3Jzc3IXCxIERmVlZCIDYWxsDAsSBEZlZWQYAQw')
     logging.info("Loaded feed " + str(feed))
     #wordInfos = db.GqlQuery("SELECT * FROM WordInfoEntity WHERE ANCESTOR IS :1", feed.key())
     #for info in wordInfos:
