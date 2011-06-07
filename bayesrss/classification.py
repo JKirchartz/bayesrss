@@ -13,15 +13,17 @@ CLASSIFIER_KEY = "classifier"
 
 def do_persist(feed_key):
     logging.info("Starting persist")
-    dirty_key = "classifier_dity_" + feed_key
+    dirty_key = "classifier_dirty_" + feed_key
+    logging.info(dirty_key)
     dirty = memcache.get(dirty_key)
     if dirty is None or dirty:
         logging.info("Classifier is dirty")
         memcache.set(dirty_key, False)
         classifier = get_classifier(feed_key)
-        feed_key_obj = db.Key.from_path('Feed', feed_key)
+        logging.info("Persisting feed " + feed_key)
+        feed = Feed.get(feed_key)
         counts = SpamCounts(
-            parent=feed_key_obj, 
+            parent=feed, 
             key_name=SPAM_COUNT_KEY, 
             nham=classifier.nham, 
             nspam=classifier.nspam)
@@ -29,7 +31,7 @@ def do_persist(feed_key):
         for word in classifier.dirty:
             info = classifier.wordinfo[word]
             entities.append(WordInfoEntity(
-                parent=feed_key_obj,
+                parent=feed,
                 key_name=feed_key + "_" + word, 
                 word=word, 
                 spamcount=info.spamcount, 
@@ -47,17 +49,21 @@ def get_classifier(feed_key):
     if classifier is None:
         classifier = Classifier(classifier_key)
         logging.info("New classifier: " + str(classifier.key))
-        counts = SpamCounts.get_by_key_name(SPAM_COUNT_KEY)
+        counts = SpamCounts.get_by_key_name(SPAM_COUNT_KEY) 
         if counts:
             classifier.nham = counts.nham
             classifier.nspam = counts.nspam
         
+        logging.info("Loading entities for " + feed_key)
         wordInfos = db.GqlQuery("SELECT * FROM WordInfoEntity WHERE ANCESTOR IS :1", feed_key)
+        count = 0
         for info in wordInfos:
             w = WordInfo()
             w.spamcount = info.spamcount
             w.hamcount = info.hamcount
             classifier.wordinfo[info.word] = w
+            count += 1
+        logging.info("Loaded " + str(count) + " entities")
         memcache.add(classifier.key, classifier)
     return classifier
     

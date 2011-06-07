@@ -4,13 +4,13 @@ from xml.etree import cElementTree as etree
 from datetime import datetime
 from email.utils import parsedate
 
-#from bayesrss.models import *
+from bayesrss.models import *
 
-class Item:
-    def __init__(self, title, description, link):
-        self.title = title
-        self.description = description
-        self.link = link
+#class Item:
+#    def __init__(self, title, description, link):
+#        self.title = title
+#        self.description = description
+#        self.link = link
         
 def fetch_items(link):
     #self.hitCounter.countFetchFeedHit()
@@ -47,6 +47,8 @@ def fetch_seek_items(link):
         items = fetch_items(link)
         logging.info("Found " + str(len(items)) + " items")
         for it in items:
+            if it.title == 'Unfortunately SEEK could not generate this feed':
+                continue
             if items_and_pay.has_key(it.guid):
                 items_and_pay[it.guid].maximum = i + step
             else:
@@ -54,4 +56,9 @@ def fetch_seek_items(link):
                 it.maximum = i + step
                 items_and_pay[it.guid] = it
     logging.info("Found " + str(len(items_and_pay)) + ", took " + str(datetime.now() - start))
-    return items_and_pay.values()
+    items = items_and_pay.values()
+    seek_items = []
+    for it in items:
+        seek_it = SeekItem(it)
+        seek_items.append(seek_it)
+    return seek_items

@@ -36,7 +36,7 @@ class ItemStore:
             classifier = self.classifier(feedkey)
             for it in feed_info.items:
                 if not feed_info.itemstore.has_key(it.hash()):
-                    feed_info.itemstore[it.hash()] = ItemClassification(it, classifier.spamprob(it.getTokens()), it.pub_datetime)
+                    feed_info.itemstore[it.hash()] = ItemClassification(it, classifier.spamprob(it.tokens()), it.pub_datetime)
         else:
             logging.info("Returned prebuilt item dictionary")
         return feed_info.itemstore

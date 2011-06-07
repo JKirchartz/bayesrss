@@ -57,11 +57,13 @@ def do_filtered_xml(request, response, do_filter, minProb=0, maxProb=1):
     if do_filter:
         classifier = get_classifier(key)
         for i in items:
-            spam_prob = classifier.spamprob(i.getTokens())
+            spam_prob = classifier.spamprob(i.tokens())
             if minProb < spam_prob and spam_prob < maxProb:
                 filtered.append(i)
+        logging.info("Returning filtered xml: " + str(len(filtered)))
     else:
-        filtered.append(items)
+        filtered += items
+        logging.info("Returning unfiltered xml: " + str(len(filtered)))
         
     response.headers['Content-Type'] = 'text/xml'
     response.out.write(
@@ -77,6 +79,13 @@ class ViewFeedHtml(webapp.RequestHandler):
         self.response.headers['Content-Type'] = 'text/html'
         self.response.out.write(
             template.render(HTML_TEMPLATE_PATH, {"item_list":item_list, "count":len(item_list), "feed":key}))
+
+class CleanFeedCache(webapp.RequestHandler):
+    def get(self):
+        key = self.request.get('key')
+        feed_info = itemstore.get_items(key)
+        feed_info.fetchtime = None
+        self.response.out.write("All good")
         
 class EditFeeds(webapp.RequestHandler):
     def get(self):
@@ -146,11 +155,13 @@ def classify(handler, learn):
         
     classifier = get_classifier(feed_key)
     if learn:
-        classifier.learn(value.item.getTokens(), isSpam)
+        classifier.learn(value.item.tokens(), isSpam)
     else:
-        classifier.unlearn(value.item.getTokens(), value.spam)
+        classifier.unlearn(value.item.tokens(), value.spam)
     persist_classifier(classifier, feed_key)
-    value.probability = classifier.spamprob(value.item.getTokens())
+    value.probability = classifier.spamprob(value.item.tokens())
+    logging.info("SPAM" if isSpam else "HAM")
+    logging.info(value.item.tokens())
     logging.info("prob="+str(value.probability))
     value.classified = learn
     value.spam = isSpam
@@ -168,7 +179,8 @@ application = webapp.WSGIApplication(
          ('/feed/classify', ClassifyFeedItems),
          ('/feed/unclassify', UnClassifyItem),
          ('/feed/hits', ViewHits),
-         ('/feed/test', ViewTest)],
+         ('/feed/test', ViewTest),
+         ('/feed/clean', CleanFeedCache)],
         debug=True)
 
 def main():
@@ -178,8 +190,8 @@ def main():
         load_hitcounter()
         #get_classifier()
         itemstore = ItemStore(hitCounter, get_classifier)
+        make_seek_feeds()
     #do_stuff()
-    #make_seek_feeds()
     run_wsgi_app(application)
 
 def make_seek_feeds():
@@ -187,28 +199,45 @@ def make_seek_feeds():
     for f in feeds:
         logging.info("Looking at feed " + f.title)
         logging.info(f.link)
-        if f.link.startswith(" http://rss.seek.com.au"):
+        if f.link.startswith("http://rss.seek.com.au"):
             logging.info("Found a seek feed")
             f.is_seek_mined = True
             f.link = f.link.lstrip()
             f.put()
             
 def do_stuff():
-    feed = Feed.get('aghiYXllc3Jzc3IXCxIERmVlZCIDYWxsDAsSBEZlZWQYAQw')
-    wordInfos = db.GqlQuery("SELECT * FROM WordInfoEntity WHERE ANCESTOR IS :1", feed.key())
-    for info in wordInfos:
-        logging.info(str(info.word))
-    #wordInfos = WordInfoEntity.all()
-    #entities = []
+    feed = Feed.get('')
+    logging.info("Loaded feed " + str(feed))
+    #wordInfos = db.GqlQuery("SELECT * FROM WordInfoEntity WHERE ANCESTOR IS :1", feed.key())
     #for info in wordInfos:
-    #    entities.append(WordInfoEntity(
-    #        parent=feed.key(),
-    #        key_name=str(feed.key()) + "_" + info.word, 
-    #        word=info.word, 
-    #        spamcount=info.spamcount, 
-    #        hamcount=info.hamcount))
+    #    logging.info(str(info.word))
+    count = 0
+    wordInfos = WordInfoEntity.all()
+    for w in wordInfos:
+        count += 1
+    logging.info("Loaded " + str(count) + " word infos")
+    entities = []
+    for info in wordInfos:
+        if not info.parent == feed:
+            entities.append(WordInfoEntity(
+                parent=feed,
+                key_name=str(feed.key()) + "_" + info.word, 
+                word=info.word, 
+                spamcount=info.spamcount, 
+                hamcount=info.hamcount))
+    logging.info("Only " + str(len(entities)) + "being persisted")
+    o = []
+    count = 0
+    for e in entities:
+        o.append(e)
+        count += 1
+        if count > 100:
+            db.put(o)
+            count = 0
+            o = []
+    db.put(o)
     #db.put(entities)
-    #logging.info("Length: " + str(count) + " of " + str(all)) 
+    logging.info("Length: " + str(count) + " of " + str(all)) 
                 
 def load_hitcounter():
     global hitCounter
