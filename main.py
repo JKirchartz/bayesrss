@@ -190,7 +190,6 @@ def main():
         load_hitcounter()
         #get_classifier()
         itemstore = ItemStore(hitCounter, get_classifier)
-        make_seek_feeds()
     #do_stuff()
     run_wsgi_app(application)
 
@@ -248,6 +247,9 @@ def get_feed_details(feed):
     tree = etree.fromstring(xml)
     channel = tree.find("channel")
 
+    if feed.link.startswith("http://rss.seek.com.au"):
+        logging.info("Found a seek feed")
+        feed.is_seek_mined = True
     if channel:
         feed.title = channel.find("title").text
         feed.description = channel.find("description").text
