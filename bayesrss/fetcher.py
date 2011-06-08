@@ -36,13 +36,13 @@ def safe_get_element(node, element):
     else:
         return None
         
-def fetch_seek_items(link):
+def fetch_seek_items(link_prefix):
     start = datetime.now()
     items_and_pay = {}
     step = 5000
     for i in range(60000, 120000, step):
         salary_range = str(i) + "-" + str(i + step)
-        link = link + "&salary=" + salary_range
+        link = link_prefix + "&salary=" + salary_range
         logging.info("Fetching for pay range $" + str(i) + " to $" + str(i + step))
         items = fetch_items(link)
         logging.info("Found " + str(len(items)) + " items")
