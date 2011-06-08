@@ -31,7 +31,7 @@ class ItemStore:
             for key, value in feed_info.itemstore.items():
                 if value.isStale():
                     del feed_info.itemstore[key]
-                    logging.info("get_dictionary: deleting item " + value.title)
+                    logging.info("get_dictionary: deleting item " + value.item.title)
             classifier = self.classifier_factory(feedkey)
             for it in feed_info.items:
                 if not feed_info.itemstore.has_key(it.hash()):
