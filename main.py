@@ -19,8 +19,8 @@ from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.api import memcache
 
-SPAM_THRESHOLD = 0.95
-HAM_THRESHOLD = 0.1
+SPAM_THRESHOLD = 0.9
+HAM_THRESHOLD = 0.15
 HIT_COUNTER_KEY = "key"
 SPAM_COUNT_KEY = "singleton"
 FEED_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'feed.xml')
@@ -86,6 +86,13 @@ class CleanFeedCache(webapp.RequestHandler):
         feed_info = itemstore.get_items(key)
         feed_info.fetchtime = None
         self.response.out.write("All good")
+    
+class CacheFeedHandler(webapp.RequestHandler):
+    def get(self):
+        key = self.request.get('key')
+        feed_info = itemstore.get_items(key)
+        feed_info.fetchtime = None
+        itemstore.get_items(key)
         
 class EditFeeds(webapp.RequestHandler):
     def get(self):
@@ -180,7 +187,8 @@ application = webapp.WSGIApplication(
          ('/feed/unclassify', UnClassifyItem),
          ('/feed/hits', ViewHits),
          ('/feed/test', ViewTest),
-         ('/feed/clean', CleanFeedCache)],
+         ('/feed/clean', CleanFeedCache),
+         ('/feed/cache', CacheFeedHandler)],
         debug=True)
 
 def main():

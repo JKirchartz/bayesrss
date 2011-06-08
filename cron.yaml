@@ -1,0 +1,4 @@
+cron:
+- description: pre-fetch seek items
+  url: /feed/cache?key=agpzfmJheWVzcnNzchgLEgRGZWVkIgNhbGwMCxIERmVlZBjpBww
+  schedule: every 2 hours
