@@ -80,12 +80,6 @@ class Feed(db.Model):
     is_filtered = db.BooleanProperty()
     is_seek_mined = db.BooleanProperty()
     
-    def fetch_items(self):
-        if self.is_seek_mined:
-            return fetch_seek_items(self.link)
-        else:
-            return fetch_items(self.link)
-            
 class Hit(db.Model):
     headers = db.StringProperty()
     xmlServiceHitCount = db.IntegerProperty(default=0)

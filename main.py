@@ -83,14 +83,14 @@ class ViewFeedHtml(webapp.RequestHandler):
 class CleanFeedCache(webapp.RequestHandler):
     def get(self):
         key = self.request.get('key')
-        feed_info = itemstore.get_feed_info(key)
+        feed_info = itemstore.get_items(key)
         feed_info.fetchtime = None
         self.response.out.write("All good")
     
 class CacheFeedHandler(webapp.RequestHandler):
     def get(self):
         key = self.request.get('key')
-        feed_info = itemstore.get_feed_info(key)
+        feed_info = itemstore.get_items(key)
         feed_info.fetchtime = None
         itemstore.get_items(key)
         
