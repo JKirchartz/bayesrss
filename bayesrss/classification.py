@@ -12,15 +12,15 @@ SPAM_COUNT_KEY = "singleton"
 CLASSIFIER_KEY = "classifier"
 
 def do_persist(feed_key):
-    logging.info("Starting persist")
+    logging.info("do_persist: Starting persist")
     dirty_key = "classifier_dirty_" + feed_key
     logging.info(dirty_key)
     dirty = memcache.get(dirty_key)
     if dirty is None or dirty:
-        logging.info("Classifier is dirty")
+        logging.info("do_persist: Classifier is dirty")
         memcache.set(dirty_key, False)
         classifier = get_classifier(feed_key)
-        logging.info("Persisting feed " + feed_key)
+        logging.info("do_persist: Persisting feed " + feed_key)
         feed = Feed.get(feed_key)
         counts = SpamCounts(
             parent=feed, 
@@ -41,22 +41,22 @@ def do_persist(feed_key):
         classifier.clean()
         db.put(entities)
         _do_memchache_set(classifier)
-        logging.info("Persisted " + str(len(entities)) + " of " + str(len(classifier.wordinfo.keys()) + 1) + " entities")
+        logging.info("do_persist: Persisted " + str(len(entities)) + " of " + str(len(classifier.wordinfo.keys()) + 1) + " entities")
         
 def get_classifier(feed_key):
-    logging.info("Getting classifier for feed: " + feed_key)
+    logging.info("get_classifier: Getting classifier for feed: " + feed_key)
     classifier_key = "classifier_" + feed_key
     classifier = memcache.get(classifier_key)
     
     if classifier is None:
         classifier = Classifier(classifier_key)
-        logging.info("New classifier: " + str(classifier.key))
+        logging.info("get_classifier: New classifier: " + str(classifier.key))
         counts = SpamCounts.get_by_key_name(SPAM_COUNT_KEY) 
         if counts:
             classifier.nham = counts.nham
             classifier.nspam = counts.nspam
         
-        logging.info("Loading entities for " + feed_key)
+        logging.info("get_classifier: Loading entities for " + feed_key)
         wordInfos = db.GqlQuery("SELECT * FROM WordInfoEntity WHERE ANCESTOR IS :1", feed_key)
         count = 0
         #max_sc = 0
@@ -70,7 +70,7 @@ def get_classifier(feed_key):
         #if max_sc > classifier.nspam:
         #    classifier.nspam = max_sc
         #logging.info("Max spamcount = " + str(max_sc) + " with nspam = " + str(classifier.nspam))
-        logging.info("Loaded " + str(count) + " entities")
+        logging.info("get_classifier: Loaded " + str(count) + " entities")
         memcache.add(classifier.key, classifier)
     return classifier
     
