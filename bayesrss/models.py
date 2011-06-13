@@ -63,13 +63,11 @@ class SeekItem(Item):
 
     def tokens(self):
         return self._do_tokens([self.raw_title, self.raw_description])
+
             
-#class SeekItem(Item):
-#    def get_tokens(self):
-#        if not hasattr(self, 'tokens'):
-#            pass
-#        return None
-            
+#Import down here because circular dependancy between fetcher and us
+from bayesrss.fetcher import *
+
 class Feed(db.Model):
     title = db.StringProperty()
     description = db.StringProperty(multiline=True)
@@ -84,7 +82,7 @@ class Feed(db.Model):
         if self.is_seek_mined:
             return fetch_seek_items(self.link)
         else:
-            return fetch_items(self.link)
+            return fetch_items(self.link)                                       
             
 class Hit(db.Model):
     headers = db.StringProperty()

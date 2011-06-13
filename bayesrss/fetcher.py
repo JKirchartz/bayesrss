@@ -1,12 +1,14 @@
+import sys
 import urllib2
 import logging
 from xml.etree import cElementTree as etree
 from datetime import datetime
 from email.utils import parsedate
 
+from google.appengine.api import urlfetch
+
 from bayesrss.models import *
 
-from google.appengine.api import urlfetch
 
 #class Item:
 #    def __init__(self, title, description, link):
@@ -45,27 +47,37 @@ def fetch_seek_items(link_prefix):
     start = datetime.now()
     items_and_pay = {}
     def callback(rpc, min, max):
-        xml = rpc.get_result().content
+        logging.info("Doing callback for " + str(min) + " - " + str(max))
+        try:
+            xml = rpc.get_result().content
+        except urlfetch.DownloadError:
+            logging.error(sys.exc_info()[0])
+            return
         items = parse_feed_xml(xml)
         logging.info("Found " + str(len(items)) + " items for range $" + str(min) + " to $" + str(max))
         for it in items:
             if it.title == 'Unfortunately SEEK could not generate this feed':
                 continue
             if items_and_pay.has_key(it.guid):
+                logging.info("Updating existing record for guid " + it.guid + ", " + it.title)
                 items_and_pay[it.guid].mins.append(min)
                 items_and_pay[it.guid].maxs.append(max)
             else:
+                logging.info("Making NEW record for guid " + it.guid + ", " + it.title) 
                 it.mins = [min]
                 it.maxs = [max]
                 items_and_pay[it.guid] = it
-    
+    def get_callback(rpc, min, max):
+        logging.info("Getting callback for " + str(min) + " - " + str(max))
+        return lambda: callback(rpc, min, max)
+        
     rpcs = []
     step = 5000
-    for i in range(60000, 120000, step):
+    for i in range(50000, 150000, step):
         salary_range = str(i) + "-" + str(i + step)
         link = link_prefix + "&salary=" + salary_range
         rpc = urlfetch.create_rpc()
-        rpc.callback = lambda: callback(rpc, i, i + step)
+        rpc.callback = get_callback(rpc, i, i + step)
         urlfetch.make_fetch_call(rpc, link)
         rpcs.append(rpc)
     for rpc in rpcs:

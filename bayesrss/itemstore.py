@@ -1,7 +1,6 @@
 import logging
 
 from bayesrss.models import *
-from bayesrss.fetcher import *
 
 class FeedInfo:
     def __init__(self, items, feed, fetchtime):
@@ -50,7 +49,7 @@ class ItemStore:
             
     def get_items(self, key):
         feed_info = self.get_feed_info(key)
-        if feed_info is not None
+        if feed_info is not None:
             logging.info("get_items: Feed was found in feedstore")
             if self.isRecent(feed_info.fetchtime):
                 logging.info("get_items: Returning items from cache")
