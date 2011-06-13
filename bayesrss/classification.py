@@ -29,13 +29,15 @@ def do_persist(feed_key):
             nspam=classifier.nspam)
         entities = [counts]
         for word in classifier.dirty:
-            info = classifier.wordinfo[word]
-            entities.append(WordInfoEntity(
-                parent=feed,
-                key_name=feed_key + "_" + word, 
-                word=word, 
-                spamcount=info.spamcount, 
-                hamcount=info.hamcount))
+            #Unlearning can leave stale entries in the dirty set
+            if classifier.wordinfo.has_key(word):
+                info = classifier.wordinfo[word]
+                entities.append(WordInfoEntity(
+                    parent=feed,
+                    key_name=feed_key + "_" + word, 
+                    word=word, 
+                    spamcount=info.spamcount, 
+                    hamcount=info.hamcount))
         classifier.clean()
         db.put(entities)
         _do_memchache_set(classifier)
