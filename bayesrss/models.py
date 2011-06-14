@@ -63,6 +63,12 @@ class SeekItem(Item):
 
     def tokens(self):
         return self._do_tokens([self.raw_title, self.raw_description])
+        
+    def hash(self):
+        if self._hash is None:
+            #Use raw title because the pay details will occaisonally be incorrect, and worse: change
+            self._hash = str(jhash(self.raw_title + self.description))
+        return self._hash
 
             
 #Import down here because circular dependancy between fetcher and us

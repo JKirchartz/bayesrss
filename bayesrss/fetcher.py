@@ -46,6 +46,7 @@ def safe_get_element(node, element):
 def fetch_seek_items(link_prefix):
     start = datetime.now()
     items_and_pay = {}
+    
     def callback(rpc, min, max):
         logging.info("Doing callback for " + str(min) + " - " + str(max))
         try:
@@ -67,16 +68,17 @@ def fetch_seek_items(link_prefix):
                 it.mins = [min]
                 it.maxs = [max]
                 items_and_pay[it.guid] = it
+                
     def get_callback(rpc, min, max):
         logging.info("Getting callback for " + str(min) + " - " + str(max))
         return lambda: callback(rpc, min, max)
         
     rpcs = []
     step = 5000
-    for i in range(50000, 150000, step):
+    for i in range(50000, 160000, step):
         salary_range = str(i) + "-" + str(i + step)
         link = link_prefix + "&salary=" + salary_range
-        rpc = urlfetch.create_rpc()
+        rpc = urlfetch.create_rpc(deadline=10)
         rpc.callback = get_callback(rpc, i, i + step)
         urlfetch.make_fetch_call(rpc, link)
         rpcs.append(rpc)
