@@ -48,31 +48,32 @@ def fetch_seek_items(link_prefix):
     items_and_pay = {}
     
     def callback(rpc, min, max):
-        logging.info("Doing callback for " + str(min) + " - " + str(max))
+        #logging.info("fetch_seek_items: Doing callback for " + str(min) + " - " + str(max))
         try:
             xml = rpc.get_result().content
         except urlfetch.DownloadError:
             logging.error(sys.exc_info()[0])
             return
         items = parse_feed_xml(xml)
-        logging.info("Found " + str(len(items)) + " items for range $" + str(min) + " to $" + str(max))
+        logging.info("fetch_seek_items: Found " + str(len(items)) + " items for range $" + str(min) + " to $" + str(max))
         for it in items:
             if it.title == 'Unfortunately SEEK could not generate this feed':
                 continue
             if items_and_pay.has_key(it.guid):
-                logging.info("Updating existing record for guid " + it.guid + ", " + it.title)
+                #logging.info("fetch_seek_items: Updating existing record for guid " + it.guid + ", " + it.title)
                 items_and_pay[it.guid].mins.append(min)
                 items_and_pay[it.guid].maxs.append(max)
             else:
-                logging.info("Making NEW record for guid " + it.guid + ", " + it.title) 
+                #logging.info("fetch_seek_items: Making NEW record for guid " + it.guid + ", " + it.title) 
                 it.mins = [min]
                 it.maxs = [max]
                 items_and_pay[it.guid] = it
                 
     def get_callback(rpc, min, max):
-        logging.info("Getting callback for " + str(min) + " - " + str(max))
+        #logging.info("fetch_seek_items: Getting callback for " + str(min) + " - " + str(max))
         return lambda: callback(rpc, min, max)
         
+    logging.info("fetch_seek_items: Fetching seek link: " + link_prefix)
     rpcs = []
     step = 5000
     for i in range(50000, 160000, step):
