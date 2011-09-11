@@ -38,6 +38,7 @@ from __future__ import generators
 #
 # This implementation is due to Tim Peters et alia.
 
+import logging
 
 import math
 import types
@@ -312,7 +313,12 @@ class Classifier:
         nham = float(self.nham or 1)
         nspam = float(self.nspam or 1)
 
+        if nham < hamcount:
+            logging.error("Found hamcount out of whack. hamcount=" + str(hamcount) + ", nham=" + str(nham))
+            nham = hamcount
+        
         assert hamcount <= nham
+        
         hamratio = hamcount / nham
 
         assert spamcount <= nspam
