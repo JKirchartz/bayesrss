@@ -55,6 +55,8 @@ class ItemStore:
                 logging.info("get_items: Returning items from cache")
             else:
                 logging.info("get_items: Fetched new items")
+                feed = Feed.get(key)
+                feed_info.feed = feed
                 feed_info.items = feed_info.feed.fetch_items()
                 feed_info.fetchtime = datetime.now()
             return feed_info
