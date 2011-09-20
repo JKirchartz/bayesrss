@@ -59,20 +59,30 @@ def get_classifier(feed_key):
         logging.info("get_classifier: Loading entities for " + feed_key)
         wordInfos = db.GqlQuery("SELECT * FROM WordInfoEntity WHERE ANCESTOR IS :1", feed_key)
         count = 0
-        #max_sc = 0
+        max_sc = 0
+        max_hc = 0
         for info in wordInfos:
             w = WordInfo()
-        #    max_sc = max(max_sc, info.spamcount)
+            max_sc = max(max_sc, info.spamcount)
+            max_hc = max(max_hc, info.hamcount)
             w.spamcount = info.spamcount
             w.hamcount = info.hamcount
             classifier.wordinfo[info.word] = w
             count += 1
-        #if max_sc > classifier.nspam:
-        #    classifier.nspam = max_sc
-        #logging.info("Max spamcount = " + str(max_sc) + " with nspam = " + str(classifier.nspam))
+        if max_sc > classifier.nspam:
+            classifier.nspam = max_sc
+        logging.info("Max spamcount = " + str(max_sc) + " with nspam = " + str(classifier.nspam))
+        if max_hc > classifier.nham:
+            classifier.nham = max_hc
+        logging.info("Max hamcount = " + str(max_hc) + " with nspam = " + str(classifier.nham))
+        
         logging.info("get_classifier: Loaded " + str(count) + " entities")
         memcache.add(classifier.key, classifier)
     return classifier
+    
+def clear_classifier(feed_key):
+    do_persist(feed_key)
+    memcache.delete("classifier_" + feed_key)
     
 def _do_memchache_set(classifier):
     memcache.set(classifier.key, classifier)

@@ -99,6 +99,9 @@ class EditFeeds(webapp.RequestHandler):
         Feed.get(self.request.get('key')).delete()
         self.redirect("/feeds")
 
+class ClearClassifier(webapp.RequestHandler):
+    def get(self):
+        clear_classifier(self.request.get('key'))
 
 class ViewTest(webapp.RequestHandler):
     def get(self):
@@ -188,7 +191,8 @@ application = webapp.WSGIApplication(
          ('/feed/hits', ViewHits),
          ('/feed/test', ViewTest),
          ('/feed/clean', CleanFeedCache),
-         ('/feed/cache', CacheFeedHandler)],
+         ('/feed/cache', CacheFeedHandler),
+         ('/feed/classifier', ClearClassifier)],
         debug=True)
 
 def main():
