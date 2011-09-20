@@ -1,5 +1,5 @@
 import os,sys
-import urllib2
+import urllib2,urllib,urlparse,cgi
 import logging
 from xml.etree import cElementTree as etree
 from datetime import datetime, timedelta
@@ -108,7 +108,7 @@ class ViewTest(webapp.RequestHandler):
 #        self.response.out.write(str(get_classifier(feed).nspam) + "\n")
 #        self.response.out.write(str(get_classifier(feed).nham))
 
-        self.response.out.write(self.request.url)
+        self.response.out.write(dir(urlparse))
 #        items = get_new_items('http://www.abc.net.au/news/syndicate/breakingrss.xml')
 #        self.response.out.write(hash(items[0]))
 
@@ -128,9 +128,8 @@ class ViewHits(webapp.RequestHandler):
 class ViewFeeds(webapp.RequestHandler):
     def get(self):
         feeds = db.GqlQuery("SELECT * FROM Feed WHERE ANCESTOR IS :1", get_feed_key())
-        path = os.path.join(os.path.dirname(__file__), 'feeds.html')
         self.response.headers['Content-Type'] = 'text/html'
-        self.response.out.write(template.render(path, {"feeds" : feeds}))
+        self.response.out.write(template.render(path("feeds.html"), {"feeds" : feeds}))
 
     def post(self):
         link = self.request.get('link')
@@ -140,6 +139,27 @@ class ViewFeeds(webapp.RequestHandler):
         feed.put()
         self.redirect("/feeds")
 
+class ViewSeekFeeds(webapp.RequestHandler):
+    def get(self):
+        feeds = db.GqlQuery("SELECT * FROM Feed WHERE ANCESTOR IS :1", get_feed_key())
+        self.response.headers['Content-Type'] = 'text/html'
+        self.response.out.write(template.render(path("seek.html"), {"feeds" : feeds, "request":self.request}))
+
+    def post(self):
+        link = self.request.get('link')
+        if link.find('salary') >= 0:
+            logging.info('Stripping salary param from: ' + link)
+            split = urlparse.urlsplit(link)
+            params = dict(cgi.parse_qsl(split.query))
+            del params['salary']
+            link = split.scheme + "://" + split.netloc + split.path + '?' + urllib.urlencode(params)
+            logging.info('Finished stripping: ' + link)
+        feed = Feed(parent = get_feed_key(),
+                    link = link)
+        get_feed_details(feed)
+        feed.put()
+        self.redirect("/feeds/seek")
+        
 class UnClassifyItem(webapp.RequestHandler):
     def post(self):
         classify(self, False)
@@ -180,6 +200,7 @@ def classify(handler, learn):
 
 application = webapp.WSGIApplication(
         [('/feeds', ViewFeeds),
+         ('/feeds/seek', ViewSeekFeeds),
          ('/feed/delete', EditFeeds),
          ('/feed/items', ViewFeedHtml),
          ('/feed/xml', ViewXmlFeedAll),
@@ -262,7 +283,7 @@ def get_feed_details(feed):
         logging.info("Found a seek feed")
         feed.is_seek_mined = True
     if channel:
-        feed.title = channel.find("title").text
+        feed.title = "bayesrss: " + channel.find("title").text
         feed.description = channel.find("description").text
 
     

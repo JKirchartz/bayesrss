@@ -1,0 +1,30 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head><title>bayesrss - Seek feeds</title></head>
+<body>
+<form action="/feeds/seek" method="post">
+    <div>
+        <b>Add a new feed</b><br/>
+        Source RSS link:
+        <input type="text" name="link" size="90">
+        <input type="submit" value="Add Feed"><br/>
+    </div>
+</form>
+<div/>
+{% for feed in feeds %}
+    {% if feed.is_seek_mined %}
+        <p style="margin-top:25px">
+            <b>Title:</b> {{ feed.title }}<br/>
+            <b>Description:</b> {{ feed.description }}<br/>
+            <b>Source RSS:</b> <a href="{{ feed.link }}">{{ feed.link }}</a><br/>
+            <b>Subscribe:</b>&nbsp;&nbsp;&nbsp;
+            <a href="/feed/xml?key={{ feed.key }}">Unfiltered</a>&nbsp;&nbsp;&nbsp;
+            <a href="/feed/xml/ham?key={{ feed.key }}">Ham</a>&nbsp;&nbsp;&nbsp;
+            <a href="/feed/xml/spam?key={{ feed.key }}">Spam</a>&nbsp;&nbsp;&nbsp;
+            <a href="/feed/xml/unknown?key={{ feed.key }}">Unknown</a><br/>
+            <a href="/feed/items?key={{ feed.key }}">Classify Items</a>
+        </p>
+    {% endif %}
+{% endfor %}
+</body>
+</html>
