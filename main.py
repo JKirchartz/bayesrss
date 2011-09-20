@@ -23,7 +23,6 @@ SPAM_THRESHOLD = 0.9
 HAM_THRESHOLD = 0.15
 HIT_COUNTER_KEY = "key"
 SPAM_COUNT_KEY = "singleton"
-FEED_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'feed.xml')
 HTML_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'items.html')
 
 itemstore = None
@@ -67,9 +66,12 @@ def do_filtered_xml(request, response, do_filter, minProb=0, maxProb=1):
         
     response.headers['Content-Type'] = 'text/xml'
     response.out.write(
-        template.render(FEED_TEMPLATE_PATH, {"items":filtered, "feed":feed}))
+        template.render(path('feed.xml'), {"items":filtered, "feed":feed, "request":request}))
         
-
+def path(filename):
+    return os.path.join(os.path.dirname(__file__), filename)
+    
+    
 class ViewFeedHtml(webapp.RequestHandler):    
     def get(self):
         key = self.request.get('key')
@@ -103,9 +105,10 @@ class EditFeeds(webapp.RequestHandler):
 class ViewTest(webapp.RequestHandler):
     def get(self):
         self.response.headers['Content-Type'] = 'text/plain'
-        self.response.out.write(str(get_classifier(feed).nspam) + "\n")
-        self.response.out.write(str(get_classifier(feed).nham))
+#        self.response.out.write(str(get_classifier(feed).nspam) + "\n")
+#        self.response.out.write(str(get_classifier(feed).nham))
 
+        self.response.out.write(self.request.url)
 #        items = get_new_items('http://www.abc.net.au/news/syndicate/breakingrss.xml')
 #        self.response.out.write(hash(items[0]))
 
