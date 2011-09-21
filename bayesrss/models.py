@@ -98,12 +98,12 @@ class Hit(db.Model):
     
     def countXmlServiceHit(self, headers):
         self.xmlServiceHitCount += 1
-        self.headers = str(headers)
-        self.put()
+        #self.headers = str(headers)
+        #self.put()
         
     def countFetchFeedHit(self):
         self.fetchFeedCount += 1
-        self.put()
+        #self.put()
     
 class WordInfoEntity(db.Model):
     word = db.StringProperty()
