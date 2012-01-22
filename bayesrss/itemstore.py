@@ -42,10 +42,7 @@ class ItemStore:
         return self.get_items(feed_key).itemstore[item_key]
         
     def get_feed_info(self, key):
-        if self.feedstore.has_key(key):
-            return self.feedstore[key]
-        else:
-            return None
+        return self.feedstore.get(key)
             
     def get_items(self, key):
         feed_info = self.get_feed_info(key)
