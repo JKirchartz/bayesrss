@@ -2,11 +2,11 @@ import re
 import logging
 from datetime import datetime, timedelta
 
-from BeautifulSoup import BeautifulStoneSoup
 from google.appengine.ext import db
 from jhash import jhash
 
 from bayesrss.safewords import safewords
+from bayesrss.seekparse import parse_seek_item
 
 splitter = re.compile("[\W]")
 	
@@ -37,16 +37,12 @@ class Item():
 		return self._hash
 
 class SeekItem(Item):
-	def __init__(self, item, minimum, maximum):
-		self.raw_title = item.title
-		self.title = item.title + '	 [$' + str(minimum) + ' - $' + str(maximum) + ']'
-		self.link = item.link
+	def __init__(self, soup, minimum, maximum):
+		self.raw_title, self.link, self.description, self.raw_description, self.guid = parse_seek_item(soup)
+		self.title = self.raw_title + '	 [$' + str(minimum) + ' - $' + str(maximum) + ']'
 		self.pub_datetime = datetime.now()
 		self._tokens = None
 		self._hash = None
-		#TODO strip html tags
-		self.raw_description = item.description
-		self.description = "<html><body>" + item.description + "</body></html>"
 		
 	def tokens(self):
 		return self._do_tokens([self.raw_title, self.raw_description])

@@ -1,0 +1,11 @@
+<html><body>
+<div class="left" style="display: inline-block; vertical-align: top; padding: 10px 10px 10px 0px; width: 125px;">
+	{{location|safe}}
+</div>
+<div class="right" style="display: inline-block; vertical-align: top; padding: 10px 0px 10px 0px; max-width: 510px;">
+	{% if ul %}
+	<ul style="margin: 0px 0px 10px 0px; padding-left: 20px;">{{ul|safe}}</ul>
+	{% endif %}
+	<p style="margin: 0px;">{{p|safe}}</p>
+</div>
+</html></body>

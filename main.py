@@ -9,8 +9,6 @@ from bayesrss.models import *
 from bayesrss.itemstore import ItemStore
 from bayesrss.classification import *
 
-from google.appengine.dist import use_library
-use_library('django', '1.2')
 
 # Google App Engine imports.
 from google.appengine.ext import db
@@ -29,6 +27,9 @@ itemstore = None
 hitCounter = None
 start_time = datetime.now()
 classifier = None
+
+format = '%(levelname)s\t%(asctime)s %(filename)s:%(lineno)d:%(funcName)s] %(message)s'
+logging.getLogger().handlers[0].setFormatter(logging.Formatter(format))
 
 class ViewXmlFeedHam(webapp.RequestHandler):
 	def get(self):
@@ -59,10 +60,10 @@ def do_filtered_xml(request, response, do_filter, minProb=0, maxProb=1):
 			spam_prob = classifier.spamprob(i.tokens())
 			if minProb < spam_prob and spam_prob < maxProb:
 				filtered.append(i)
-		logging.info("Returning filtered xml: " + str(len(filtered)))
+		logging.info("Returning filtered xml: %s", len(filtered))
 	else:
 		filtered += items
-		logging.info("Returning unfiltered xml: " + str(len(filtered)))
+		logging.info("Returning unfiltered xml: %s", len(filtered))
 		
 	response.headers['Content-Type'] = 'text/xml'
 	response.out.write(
@@ -70,7 +71,6 @@ def do_filtered_xml(request, response, do_filter, minProb=0, maxProb=1):
 		
 def path(filename):
 	return os.path.join(os.path.dirname(__file__), filename)
-	
 	
 class ViewFeedHtml(webapp.RequestHandler):	  
 	def get(self):
@@ -92,9 +92,11 @@ class CleanFeedCache(webapp.RequestHandler):
 class CacheFeedHandler(webapp.RequestHandler):
 	def get(self):
 		key = self.request.get('key')
-		feed_info = itemstore.get_feed_info(key)
-		feed_info.fetchtime = None
-		itemstore.get_items(key)
+		if key: feed_infos = [itemstore.get_feed_info(key)]
+		else: feed_infos = itemstore.get_feed_infos()
+		for info in feed_infos:
+			info.fetchtime = None
+			itemstore.get_items(info.key)
 		
 class EditFeeds(webapp.RequestHandler):
 	def get(self):
@@ -173,7 +175,7 @@ def classify(handler, learn):
 	id = handler.request.get("id")
 	feed_key = handler.request.get("feed")
 	isSpam = action == 'spam'
-	logging.info("Classifying. id="+id+" feed="+feed_key+" action="+action+" learn="+str(learn))
+	logging.info("Classifying. id=%s feed=%s action=%s learn=%s", id, feed_key, action, learn)
 	try:
 		value = itemstore.get_item(feed_key, id)
 	except:

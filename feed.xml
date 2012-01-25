@@ -10,7 +10,7 @@
         {% for item in items %}
         <item>
                 <title>{{item.title}}</title>
-                <description>{{item.description}}</description>
+                <description>{{item.description|force_escape}}</description>
                 <link>{{item.link}}</link>
                 {% if item.guid %}<guid>{{item.guid}}</guid>{% endif %}
                 <pubDate>{{item.pubdate}}</pubDate>
