@@ -65,7 +65,7 @@ def fetch_seek_items(link_prefix):
 	for rpc in rpcs:
 		rpc.wait()
 	
-	logging.info("Found " + str(len(items_and_pay)) + ", took " + str(datetime.now() - start))
+	logging.info("Fetched %s, took %s", len(items_and_pay), datetime.now() - start)
 	return [SeekItem(it['item'], min(it['salary']), max(it['salary'])) for it in items_and_pay.values()]
 
 def _callback(rpc, min, max, items_and_pay):
@@ -76,7 +76,7 @@ def _callback(rpc, min, max, items_and_pay):
 		logging.error(sys.exc_info()[0])
 		return
 	items = parse_seek_html(content)
-	logging.info("Found " + str(len(items)) + " items for range $" + str(min) + " to $" + str(max))
+	logging.info("Found %s in [%s, %s]", len(items), min, max)
 	for it in items: 
 		it['salary'] = []
 		insert_item(items_and_pay, it, min, max)

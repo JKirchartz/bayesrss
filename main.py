@@ -28,7 +28,7 @@ hitCounter = None
 start_time = datetime.now()
 classifier = None
 
-format = '%(levelname)s\t%(asctime)s %(filename)s:%(lineno)d:%(funcName)s] %(message)s'
+format = '%(levelname)s\t%(filename)s:%(lineno)d %(funcName)s] %(message)s'
 logging.getLogger().handlers[0].setFormatter(logging.Formatter(format))
 
 class ViewXmlFeedHam(webapp.RequestHandler):
@@ -54,16 +54,17 @@ def do_filtered_xml(request, response, do_filter, minProb=0, maxProb=1):
 	items = itemstore.get_items(key).items
 	
 	filtered = []
-	if do_filter:
+	if do_filter and items:
 		classifier = get_classifier(key)
 		for i in items:
 			spam_prob = classifier.spamprob(i.tokens())
 			if minProb < spam_prob and spam_prob < maxProb:
 				filtered.append(i)
-		logging.info("Returning filtered xml: %s", len(filtered))
+		logging.info("Returning filtered xml. (%s) are good, (%s) are bad", 
+				len(filtered), len(items) - len(filtered))
 	else:
 		filtered += items
-		logging.info("Returning unfiltered xml: %s", len(filtered))
+		logging.info("Returning unfiltered xml (%s)", len(filtered))
 		
 	response.headers['Content-Type'] = 'text/xml'
 	response.out.write(

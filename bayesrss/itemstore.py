@@ -22,7 +22,7 @@ class ItemStore:
 		
 	def get_dictionary(self, feedkey):
 		feed_info = self.get_items(feedkey)
-		logging.info("buildtime="+str(feed_info.buildtime) + " fetchtime="+str(feed_info.fetchtime))
+		logging.info("buildtime=%s, fetchtime=%s", feed_info.buildtime, feed_info.fetchtime)
 		
 		if feed_info.buildtime is None or feed_info.buildtime < feed_info.fetchtime:
 			logging.info("Rebuilding item dictionary")
@@ -36,7 +36,7 @@ class ItemStore:
 				if not feed_info.itemstore.has_key(it.hash()):
 					feed_info.itemstore[it.hash()] = ItemClassification(it, classifier.spamprob(it.tokens()), it.pub_datetime)
 		else:
-			logging.info("Returned prebuilt item dictionary")
+			logging.info("Returning prebuilt item dictionary")
 		return feed_info.itemstore
 	
 	def get_item(self, feed_key, item_key):
@@ -49,12 +49,12 @@ class ItemStore:
 		info = self.feedstore.get(key)	
 		if info is None:
 			if not feed: feed = Feed.get(key)
-			if feed is None: logging.error("Couldn't find feed with key=" + key)
+			if feed is None: logging.error("Couldn't find feed with key " + key)
 			info = FeedInfo(key, [], feed, None)
 			self.feedstore[key] = info
-			logging.info("created new FeedInfo")
+			logging.info("New FeedInfo created")
 		else:
-			logging.info("Feed was found in feedstore")
+			logging.info("FeedInfo found in cache")
 		return info
 			
 	def get_items(self, key):
@@ -62,7 +62,7 @@ class ItemStore:
 		if self.isRecent(feed_info.fetchtime):
 			logging.info("Returning items from cache")
 		else:
-			logging.info("Fetched new items")
+			logging.info("Fetching new items")
 			#reload the feed - in case i'm playing with it in the db
 			feed_info.feed = Feed.get(key)
 			feed_info.items = feed_info.feed.fetch_items()
