@@ -65,7 +65,7 @@ class ItemStore:
 			logging.info("Fetching new items")
 			#reload the feed - in case i'm playing with it in the db
 			feed_info.feed = Feed.get(key)
-			feed_info.items = feed_info.feed.fetch_items()
+			feed_info.items = feed_info.feed.fetch_items(feed_info.items)
 			feed_info.fetchtime = datetime.now()
 		return feed_info
 		

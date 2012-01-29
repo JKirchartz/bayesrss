@@ -67,9 +67,9 @@ class Feed(db.Model):
 	is_filtered = db.BooleanProperty()
 	is_seek_mined = db.BooleanProperty()
 	
-	def fetch_items(self):
+	def fetch_items(self, items):
 		if self.is_seek_mined:
-			return fetch_seek_items(self.link)
+			return fetch_seek_items(self.link, items)
 		else:
 			return fetch_items(self.link)										
 			
