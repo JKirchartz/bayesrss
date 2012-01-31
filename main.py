@@ -8,7 +8,7 @@ from operator import attrgetter
 from bayesrss.models import *
 from bayesrss.itemstore import ItemStore
 from bayesrss.classification import *
-
+from bayesrss.logtime import *
 
 # Google App Engine imports.
 from google.appengine.ext import db
@@ -28,8 +28,7 @@ hitCounter = None
 start_time = datetime.now()
 classifier = None
 
-format = '%(levelname)s\t%(filename)s:%(lineno)d %(funcName)s] %(message)s'
-logging.getLogger().handlers[0].setFormatter(logging.Formatter(format))
+set_log_format()
 
 class ViewXmlFeedHam(webapp.RequestHandler):
 	def get(self):
