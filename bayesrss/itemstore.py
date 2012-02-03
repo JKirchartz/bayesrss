@@ -61,7 +61,7 @@ class ItemStore:
 		return info
 			
 	def get_items(self, key):
-		feed_info = None#self.get_feed_info(key)
+		feed_info = self.get_feed_info(key)
 		if feed_info is None:
 			raise NoSuchFeedException();
 			

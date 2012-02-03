@@ -104,7 +104,7 @@ def insert_item(items_and_pay, item, minimum, maximum):
 def make_rpc(link_prefix, salary, step, items_and_pay):
 	rpc = urlfetch.create_rpc(deadline=10)
 	rpc.callback = lambda: _callback(rpc, salary, salary + step, items_and_pay)
-	urlfetch.make_fetch_call(rpc, link_prefix + "&salary=" + str(salary) + "-" + str(salary + step))
+	urlfetch.make_fetch_call(rpc, _create_seek_link(link_prefix, salary, salary + step))
 	return rpc
 
 def parse_feed_xml(xml):

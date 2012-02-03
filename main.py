@@ -47,7 +47,7 @@ class ViewXmlFeedAll(webapp.RequestHandler):
 		do_filtered_xml(self, False)
 		
 def do_filtered_xml(handler, do_filter, minProb=0, maxProb=1):
-	hitCounter.countXmlServiceHit(request.headers)
+	hitCounter.countXmlServiceHit(handler.request.headers)
 	key = handler.request.get('key')
 	feed = Feed.get(key)
 	try:
@@ -69,7 +69,7 @@ def do_filtered_xml(handler, do_filter, minProb=0, maxProb=1):
 		
 	handler.response.headers['Content-Type'] = 'text/xml'
 	handler.response.out.write(
-		template.render(path('feed.xml'), {"items":filtered, "feed":feed, "request":request}))
+		template.render(path('feed.xml'), {"items":filtered, "feed":feed, "request":handler.request}))
 
 def handleNoFeed(handler, key, e):
 	handler.error(404)
