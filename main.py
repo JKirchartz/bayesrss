@@ -32,26 +32,28 @@ set_log_format()
 
 class ViewXmlFeedHam(webapp.RequestHandler):
 	def get(self):
-		do_filtered_xml(self.request, self.response, True, maxProb=HAM_THRESHOLD)
+		do_filtered_xml(self, True, maxProb=HAM_THRESHOLD)
 		
 class ViewXmlFeedSpam(webapp.RequestHandler):
 	def get(self):
-		do_filtered_xml(self.request, self.response, True, minProb=SPAM_THRESHOLD)
+		do_filtered_xml(self, True, minProb=SPAM_THRESHOLD)
 	
 class ViewXmlFeedUnknown(webapp.RequestHandler):
 	def get(self):
-		do_filtered_xml(self.request, self.response, True, HAM_THRESHOLD, SPAM_THRESHOLD)
+		do_filtered_xml(self, True, HAM_THRESHOLD, SPAM_THRESHOLD)
 
 class ViewXmlFeedAll(webapp.RequestHandler):
 	def get(self):
-		do_filtered_xml(self.request, self.response, False)
+		do_filtered_xml(self, False)
 		
-def do_filtered_xml(request, response, do_filter, minProb=0, maxProb=1):
+def do_filtered_xml(handler, do_filter, minProb=0, maxProb=1):
 	hitCounter.countXmlServiceHit(request.headers)
-	key = request.get('key')
+	key = handler.request.get('key')
 	feed = Feed.get(key)
-	items = itemstore.get_items(key).items
-	
+	try:
+		items = itemstore.get_items(key).items
+	except NoSuchFeedException, e:
+		handleNoFeed(handler, key, e)
 	filtered = []
 	if do_filter and items:
 		classifier = get_classifier(key)
@@ -65,10 +67,13 @@ def do_filtered_xml(request, response, do_filter, minProb=0, maxProb=1):
 		filtered += items
 		logging.info("Returning unfiltered xml (%s)", len(filtered))
 		
-	response.headers['Content-Type'] = 'text/xml'
-	response.out.write(
+	handler.response.headers['Content-Type'] = 'text/xml'
+	handler.response.out.write(
 		template.render(path('feed.xml'), {"items":filtered, "feed":feed, "request":request}))
-		
+
+def handleNoFeed(handler, key, e):
+	handler.error(404)
+			
 def path(filename):
 	return os.path.join(os.path.dirname(__file__), filename)
 	
@@ -102,7 +107,6 @@ class EditFeeds(webapp.RequestHandler):
 	def get(self):
 		Feed.get(self.request.get('key')).delete()
 		self.redirect("/feeds")
-
 
 class ViewTest(webapp.RequestHandler):
 	def get(self):

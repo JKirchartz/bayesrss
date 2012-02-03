@@ -10,7 +10,10 @@ class FeedInfo:
 		self.fetchtime = fetchtime
 		self.buildtime = None
 		self.itemstore = {}
-		
+
+class NoSuchFeedException(Exception):
+	pass
+			
 class ItemStore:
 	def __init__(self, hitCounter, classifier):		   
 		"""A map of feed key to a FeedInfo """ 
@@ -58,7 +61,10 @@ class ItemStore:
 		return info
 			
 	def get_items(self, key):
-		feed_info = self.get_feed_info(key)
+		feed_info = None#self.get_feed_info(key)
+		if feed_info is None:
+			raise NoSuchFeedException();
+			
 		if self.isRecent(feed_info.fetchtime):
 			logging.info("Returning items from cache")
 		else:
@@ -71,4 +77,4 @@ class ItemStore:
 		
 	def isRecent(self, time):
 		return (time is not None 
-			and time + timedelta(hours=130) > datetime.now())
+			and time + timedelta(minutes=250) > datetime.now())

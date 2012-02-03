@@ -1,5 +1,5 @@
 application: bayesrss
-version: dev
+version: 4-smart-fetch
 runtime: python
 api_version: 1
 
