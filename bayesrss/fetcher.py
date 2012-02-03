@@ -47,9 +47,9 @@ def fetch_all_seek(link_prefix):
 	except (IOError, urlfetch.DownloadError):
 		logging.error(sys.exc_info()[0])
 		return None
-	
-def _create_seek_link(link_prefix, salary, step):
-	return link_prefix + "&salary=" + str(salary) + "-" + str(salary + step)
+
+def _create_seek_link(link_prefix, lower, upper):
+	return link_prefix + "&salary=" + str(lower) + "-" + str(upper)	
 	
 def fetch_items(link):
 	#self.hitCounter.countFetchFeedHit()
