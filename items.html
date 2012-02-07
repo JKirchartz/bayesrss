@@ -4,21 +4,19 @@
 <title>bayesrss - items</title>
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
 <script type="text/javascript" src="/static/scripts.js"></script>
-<link href="items.css" rel="stylesheet" type="text/css">
+<link href="/static/items.css" rel="stylesheet" type="text/css">
 </head>
 <body>
 <p>Count: {{ count }}</p>
 <p><b>Classification:</b> ham is prob &lt; 0.15, spam is prob &gt; 0.90, everything in between is unknown</p>
-<br/>
-<div id="feed" class="item" key="{{ feed }}"></div>
+<div id="feed" key="{{ feed }}"></div>
 {% for item_info in item_list %}
-    <div id="{{ item_info.item.hash }}">
+    <div class="item" id="{{ item_info.item.hash }}">
         <strong>{{ item_info.item.title }}</strong><br/>
         {{ item_info.item.description }}<br/>
         <div class="prob"><b>Prob:</b> {{ item_info.probability }}</div>
         <div class="link {% if item_info.classified %}classified{% else %}unclassified{% endif %}"></div>
     </div>
-    <br/>
 {% endfor %}
 </body>
 </html>
