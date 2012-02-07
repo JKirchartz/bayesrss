@@ -34,11 +34,12 @@ def check_new_items(link_prefix, old_items):
 	if html is None: return True
 	new_items = parse_seek_html(html)
 	logging.info('Check for new items found %s results', len(new_items))
-	if len(new_items) > 19:
-		logging.warning('Found more than 19 results - guid check may be incorrect')
 	guids = set([item.link for item in old_items])
 	newbies = [item for item in new_items if item['guid'] not in guids]
-	logging.info('Found %s new items', len(newbies))
+	if len(new_items) > 19 and len(newbies) == 0:
+		logging.warning('Found more than 19 results - guid check may be incorrect')
+	else:
+		logging.info('Found %s new items', len(newbies))
 	return len(newbies) > 0
 	
 def fetch_all_seek(link_prefix):
@@ -81,6 +82,8 @@ def _callback(rpc, min, max, items_and_pay):
 		return
 	items = parse_seek_html(content)
 	logging.info("Found %s in [%s, %s]", len(items), min, max)
+	if len(items) > 19: 
+		logging.warning('Found more than 19 results in a range - some might be missed')
 	for it in items: 
 		it['salary'] = []
 		insert_item(items_and_pay, it, min, max)

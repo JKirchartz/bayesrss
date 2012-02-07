@@ -1,6 +1,8 @@
--improve classify page
 -More than 20 results
 -Premium ads
 
--html in keywords
+-fetch in background worker
+-check new items in asynchronously
+-break cache into batches
+
 -pubdate

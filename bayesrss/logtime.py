@@ -11,6 +11,6 @@ class BrisbaneFormatter(logging.Formatter):
 	converter = _bris_converter
 	
 def set_log_format():
-	format = '%(asctime)s  %(levelname)s\t%(filename)s:%(lineno)d %(funcName)s]\t%(message)s'
-	logging.getLogger().handlers[0].setFormatter(BrisbaneFormatter(format))
+	format = '%(levelname)s\t%(filename)s:%(lineno)d %(funcName)s]\t%(message)s'
+	logging.getLogger().handlers[0].setFormatter(logging.Formatter(format))
 	

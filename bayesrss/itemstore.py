@@ -46,10 +46,10 @@ class ItemStore:
 		return self.get_items(feed_key).itemstore[item_key]
 		
 	def get_feed_infos(self):
-		return [self.get_feed_info(feed.key(), feed) for feed in Feed.all()]
+		return [self.get_feed_info(str(feed.key()), feed) for feed in Feed.all()]
 		
 	def get_feed_info(self, key, feed=None):
-		info = self.feedstore.get(key)	
+		info = self.feedstore.get(key)
 		if info is None:
 			if not feed: feed = Feed.get(key)
 			if feed is None: logging.error("Couldn't find feed with key " + key)
@@ -68,7 +68,7 @@ class ItemStore:
 		if self.isRecent(feed_info.fetchtime):
 			logging.info("Returning items from cache")
 		else:
-			logging.info("Fetching new items")
+			logging.info("Fetching new items. Last fetch was %s", feed_info.fetchtime)
 			#reload the feed - in case i'm playing with it in the db
 			feed_info.feed = Feed.get(key)
 			feed_info.items = feed_info.feed.fetch_items(feed_info.items)
