@@ -9,4 +9,4 @@ safewords = set(["the", "of", "to", "and", "a", "in", "is", "it", "you", "that",
     "australia", "opportunity", "company", "business", "linux", "application", "team", "cbd", "career", "contract", "currently", "join",
     "large", "leader", "leading", "location" , "month", "multiple" , "organisation", "our", "position", "positions", "programmer", 
     "project", "projects", "required", "salary", "s", "services", "skills", "small", "suburbs", "start", "style", "systems", "team", 
-    "term", "top", "work", "working", "unix"])
+    "term", "top", "work", "working", "unix", "edge", "cutting"])
