@@ -30,6 +30,10 @@ classifier = None
 
 set_log_format()
 
+class Index(webapp.RequestHandler):
+	def get(self):
+		self.redirect("/feeds/seek")
+
 class ViewXmlFeedHam(webapp.RequestHandler):
 	def get(self):
 		do_filtered_xml(self, True, maxProb=HAM_THRESHOLD)
@@ -205,7 +209,8 @@ def classify(handler, learn):
 
 
 application = webapp.WSGIApplication(
-		[('/feeds', ViewFeeds),
+		[('/', Index),
+		 ('/feeds', ViewFeeds),
 		 ('/feeds/seek', ViewSeekFeeds),
 		 ('/feed/delete', EditFeeds),
 		 ('/feed/items', ViewFeedHtml),

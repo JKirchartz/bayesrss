@@ -21,3 +21,6 @@ handlers:
 - url: /feed.*
   script: main.py
 
+- url: /
+  script: main.py
+

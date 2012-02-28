@@ -3,8 +3,10 @@ $(document).ready(function() {
 });
 
 function addClassifyLinks(dom) {
-    $("div.unclassified", dom).html("<a class='classify' action='ham' href='#'>Ham</a>&nbsp;&nbsp;&nbsp;<a class='classify' action='spam' href='#'>Spam</a>");
-    $("div.classified", dom).html("<a class='undo' href='#'>Undo</a>");
+    $("div.unclassified", dom).html(
+        "<a class='classify button icon approve' action='ham' href='#'>Ham</a> \
+        <a class='classify button icon remove' action='spam' href='#'>Spam</a>");
+    $("div.classified", dom).html("<a class='undo button icon arrowleft' href='#'>Undo</a>");
     $("a.classify", dom).click(postClassify);
     $("a.undo", dom).click(postUndo);
 }
