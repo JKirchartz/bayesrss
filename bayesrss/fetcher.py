@@ -59,10 +59,10 @@ def fetch_items(link):
 
 def parse_seek_html(html):
 	soup = BeautifulSoup.BeautifulSoup(html)
-	resultset = soup.findAll('ol', attrs={'class':'search-results saved-jobs'})
+	resultset = soup.findAll('div', attrs={'class':'grid_7 l-column state-searchresults-container'})
 	if not resultset:
 		return []
-	results = resultset[0].findAll('dl', attrs={'class':'savedjobs-details'})
+	results = resultset[0].findAll('dl', attrs={'class':'l-clearfix'})
 	return [parse_seek_job(job) for job in results] 
 		
 def parse_seek_job(job_soup):
@@ -71,7 +71,7 @@ def parse_seek_job(job_soup):
 	>>> parse_seek_job(soup)
 	{'item': <dt><a href="http://www.seek.com.au">Text</a></dt>, 'guid': u'http://www.seek.com.au'}
 	"""
-	guid = 'http://www.seek.com.au' + job_soup.find('dt').find('a')['href']
+	guid = 'http://www.seek.com.au' + job_soup.find('h2').find('a')['href']
 	return {'item':job_soup, 'guid':guid}
 
 def _callback(rpc, min, max, items_and_pay):

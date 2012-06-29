@@ -15,12 +15,16 @@ def parse_seek_item(job_soup):
 	return title, link, description, raw_location + raw_body, guid 
 			
 def create_seek_link(job):
-	anchor = job.find('dt').find('a')
+	anchor = job.find('h2').find('a')
 	return 'http://www.seek.com.au' + anchor['href'], contents(anchor.contents[0])
 	
 def create_seek_location(job):
-	location = job.find('dd', attrs={'class':'loc-salary'})
-	return contents(location, '<br>').replace('span>', 'small>'), strip_html_tags(location)
+	dd = job.findAll('dd')
+	# first dd is body, second is metastuff
+	location = dd[1]
+	# first two elements are date related
+	location_minus_date = location.contents[2:]
+	return contents(location_minus_date, '<br>').replace('span>', 'small>'), strip_html_tags(location)
 
 def create_seek_body(job):
 	body_list = job.find('ul')
@@ -34,7 +38,7 @@ def create_seek_body(job):
 		
 def contents(soup, sep=''):
 	filtered = filter(lambda x: x != '\n', soup)
-	return reduce(lambda x, y: str(x) + sep + str(y), filtered)
+	return str(reduce(lambda x, y: str(x) + sep + str(y), filtered))
 	
 def strip_html_tags(soup):
 	return regex_tags.sub(' ', soup.prettify())
